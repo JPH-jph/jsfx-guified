@@ -4,6 +4,7 @@
 This is a collection of jsfx with GUIs.
 The GUIs were written using [Geraint Luff's API](https://github.com/geraintluff/jsfx-ui-lib). The GUI is dependent on the `ui-lib` folder, so don't delete that.
 There could be some bugs, so please report them.
+
 **This is a work in progress, so there might be changes and more plugins to be guified.**
 
 ### Themes
@@ -11,7 +12,7 @@ There is a theme switcher and the plugin description on the second tab if you cl
 The themes are bitmaps located in `/ui-lib/bitmap/` and can be changed to your liking.
 
 ### Installation:
-Drop the folder in your Reaper Effects folder.
+Drop the `JPH` folder in your Reaper Effects folder.
 The plugins will have a `- GUI` suffix in REAPER to distinguish them from the originals.
 
 Right now the collection includes:
