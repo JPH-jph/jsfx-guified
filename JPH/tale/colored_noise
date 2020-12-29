@@ -245,13 +245,13 @@ title_desc("Colored noise generator", "generator | synthesis");
                         uix_control_color_from_theme(151, 30);
                         
                         slider6 == 1 ? (
-                        draw_lp(slider7,slider8, 33000, 16);
+                        draw_lp(slider7,slider8, 35000, 16);
                         ) : slider6 == 2 ? (
                         draw_bp(slider7,slider8, 33000, 16);
                         ) : slider6 == 3 ? (
                         draw_hp(slider7,slider8, 33000, 16);
                         ) : slider6 == 4 ? (
-                        draw_notch(slider7,slider8, 33000, 16);
+                        draw_notch(slider7,slider8, 50000, 16);
                         );
                         
                     ui_split_next();
@@ -290,8 +290,8 @@ ignored for other colors.
 
 editor: JPH
 -GUI (using Geraint Luff's API)
-note: the filter representation may not be the real filter shape
-I added it just for fun");
+note: the filter representation is not the real filter shape
+I added it just for fun (modified after ReaRack2 - Filter by Malcolm Smith)");
 ui_align(.5, -1);
 ui_split_rightratio(0.2);
     control_group("");
