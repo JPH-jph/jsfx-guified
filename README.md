@@ -1,10 +1,11 @@
 # jsfx-guified
 
+###Description
 This is a collection of jsfx with GUIs.
-The GUIs were written using Geraint Luff's API.
-This is a work in progress, so there might be changes and more plugins to be guified.
+The GUIs were written using [Geraint Luff's API](https://github.com/geraintluff/jsfx-ui-lib). The GUI is dependent on the /ui-lib folder, so don't delete that.
+_This is a work in progress, so there might be changes and more plugins to be guified._
 
-The GUI is dependent on the API in /ui-lib, so don't delete that folder.
+
 There is a theme switcher and the plugin description on the second tab if you click "→" on the upper right corner of the plugin.
 There could be some bugs, so please report them.
 
