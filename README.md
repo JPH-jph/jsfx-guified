@@ -13,6 +13,7 @@ Installation:
 -the plugins will have a "- GUI" suffix in REAPER to distinguish them from the originals.
 
 Right now the collection includes:
+
 (chokehold)
 -consolidator 
 -eq560
