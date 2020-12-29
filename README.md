@@ -1,6 +1,6 @@
 # jsfx-guified
 
-###Description
+### Description
 This is a collection of jsfx with GUIs.
 The GUIs were written using [Geraint Luff's API](https://github.com/geraintluff/jsfx-ui-lib). The GUI is dependent on the /ui-lib folder, so don't delete that.
 _This is a work in progress, so there might be changes and more plugins to be guified._
