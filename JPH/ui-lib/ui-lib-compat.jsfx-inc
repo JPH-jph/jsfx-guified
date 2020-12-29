@@ -246,3 +246,127 @@ control_group("");
             ui_pop();
     ui_pop();
 );
+
+function draw_lp(freq, q, maxfreq, maxq)(
+xleft=ui_left();
+xright=ui_right();
+xbottom=ui_bottom();
+xheight=ui_height();
+xwidth=ui_width();
+
+cutlev=freq/maxfreq;
+reslev=q/maxq;
+
+xmin = xleft+20;
+xrng = xright;
+xrng2 = xrng/2;
+xmax = xmin+xrng;
+
+ymin=xheight/2;
+yrng = 80;
+yrng2 = yrng/2;
+yrng4 = yrng/4;
+ymid = ymin+(yrng/2);
+ymax = ymin+yrng;
+
+gfx_a = 1;
+gfx_x = xleft;
+gfx_y = ymid;
+gfx_lineto(xmin+((cutlev)*xrng2-reslev*yrng4),ymid);
+gfx_lineto(xmin+((cutlev)*xrng2),ymid-reslev*yrng2);
+gfx_lineto(xmin+((cutlev)*xrng2)+yrng4+reslev*yrng4,ymax);
+gfx_lineto(xrng,ymax);
+);
+
+function draw_hp(freq, q, maxfreq, maxq)(
+xleft=ui_left();
+xright=ui_right();
+xbottom=ui_bottom();
+xheight=ui_height();
+xwidth=ui_width();
+
+cutlev=freq/maxfreq;
+reslev=q/maxq;
+
+xmin = xleft+40;
+xrng = xright;
+xrng2 = xrng/2.3;
+xmax = xmin+xrng;
+
+ymin=xheight/2;
+yrng = 80;
+yrng2 = yrng/2;
+yrng4 = yrng/4;
+ymid = ymin+(yrng/2);
+ymax = ymin+yrng;
+
+gfx_a = 1;
+gfx_x = xleft;
+gfx_y = ymax;
+gfx_lineto(xmin-reslev*yrng4-yrng4+((cutlev)*xrng2),ymax);
+gfx_lineto(xmin+((cutlev)*xrng2),ymid-reslev*yrng2);
+gfx_lineto(xmin+((cutlev)*xrng2+reslev*yrng4),ymid);
+gfx_lineto(xrng,ymid);
+);
+
+function draw_bp(freq, q, maxfreq, maxq)(
+xleft=ui_left();
+xright=ui_right();
+xbottom=ui_bottom();
+xheight=ui_height();
+xwidth=ui_width();
+
+cutlev=freq/maxfreq;
+reslev=q/maxq;
+
+xmin = xleft;
+xrng = xright;
+xrng2 = xrng/2;
+xmax = xmin+xrng;
+
+ymin=xheight/2;
+yrng = 80;
+yrng2 = yrng/2;
+yrng4 = yrng/4;
+ymid = ymin+(yrng/2);
+ymax = ymin+yrng;
+
+gfx_a = 1;
+gfx_x = xleft;
+gfx_y = ymax;
+gfx_lineto(xmin+((cutlev)*xrng2),ymax+((cutlev)));
+gfx_lineto(xmin+20+((cutlev)*xrng2),ymax-reslev*yrng);
+gfx_lineto(xmin+40+((cutlev)*xrng2),ymax);
+gfx_lineto(xrng,ymax);
+);
+
+function draw_notch(freq, q, maxfreq, maxq)(
+xleft=ui_left();
+xright=ui_right();
+xbottom=ui_bottom();
+xheight=ui_height();
+xwidth=ui_width();
+
+cutlev=freq/maxfreq;
+reslev=q/maxq;
+
+xmin = xleft;
+xrng = xright;
+xrng2 = xrng/2;
+xmax = xmin+xrng;
+
+ymin=xheight/2;
+yrng = 80;
+yrng2 = yrng/2;
+yrng4 = yrng/4;
+ymid = ymin+(yrng/2);
+ymax = ymin+yrng;
+
+gfx_a = 1;
+gfx_x = xleft;
+gfx_y = ymid;
+gfx_lineto(xmin+((cutlev)*xrng2),ymid+((cutlev)));
+gfx_lineto(xmin+20+((cutlev)*xrng2),ymid+reslev*yrng);
+gfx_lineto(xmin+40+((cutlev)*xrng2),ymid);
+gfx_lineto(xrng,ymid);
+);
