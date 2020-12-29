@@ -24,7 +24,7 @@ slider4:0.7<0,1>-Pitch Fudge Factor
 slider5:-6<-100,12,1>-Wet Mix (dB)
 slider6:-6<-100,12,1>-Dry Mix (dB)
 slider7:0.0<-1,1,0.01>-Channel Rate Offset (Hz)
-slider8:4<0.0625,4,0.0625>Tempo Sync (fraction of whole note)
+slider8:4<0.0625,4,0.0625>-Tempo Sync (fraction of whole note)
 slider14:0<0,6,1>-Theme
 
 in_pin:left input
