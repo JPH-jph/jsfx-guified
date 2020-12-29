@@ -36,6 +36,7 @@ Right now the collection includes:
 ||chorus|
 ||exciter|
 ||huge booty|
+|tale|colored_noise|
 |unknown|graphdist-dyn|
 |jph|voice control|
 
