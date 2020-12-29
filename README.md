@@ -39,6 +39,6 @@ Right now the collection includes:
 |jph|voice control|
 
 ### Screenshots
-![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/JPH/ui-lib/screenshots/consolidator.png)
-![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/JPH/ui-lib/screenshots/eq.png)
-![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/JPH/ui-lib/screenshots/mangler.png)
+![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/consolidator.png)
+![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/eq.png)
+![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/mangler.png)
