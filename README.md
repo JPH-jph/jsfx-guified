@@ -11,8 +11,8 @@ There is a theme switcher and the plugin description on the second tab if you cl
 The themes are bitmaps located in `/ui-lib/bitmap/` and can be changed to your liking.
 
 ### Installation:
--drop the folder in your Reaper Effects folder.
--the plugins will have a `- GUI` suffix in REAPER to distinguish them from the originals.
+Drop the folder in your Reaper Effects folder.
+The plugins will have a `- GUI` suffix in REAPER to distinguish them from the originals.
 
 Right now the collection includes:
 
@@ -38,6 +38,7 @@ Right now the collection includes:
 |unknown|graphdist-dyn|
 |jph|voice control|
 
-![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/tree/main/JPH/ui-lib/screenshots/consolidator.png)
-![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/tree/main/JPH/ui-lib/screenshots/eq.png)
-![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/tree/main/JPH/ui-lib/screenshots/mangler.png)
+### Screenshots
+![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/JPH/ui-lib/screenshots/consolidator.png)
+![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/JPH/ui-lib/screenshots/eq.png)
+![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/JPH/ui-lib/screenshots/mangler.png)
