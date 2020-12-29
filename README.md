@@ -31,6 +31,7 @@ Right now the collection includes:
 ||waveShapingDstr|
 |remaincalm|paranoiamangler (bundled with loser's amplitudeModulator)|
 |sai'ke|pop rocks|
+||wahriffic|
 |sault|31-band-eq|
 |stillwell|badbussmojo|
 ||chorus|
