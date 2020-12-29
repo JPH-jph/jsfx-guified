@@ -3,7 +3,7 @@
 ## Description
 This is a collection of JSFX with GUIs.
 The GUIs were written using [Geraint Luff's API](https://github.com/geraintluff/jsfx-ui-lib). The GUI is dependent on the `ui-lib` folder, so don't delete that. Some functions were added by me, so you'll need the `ui-lib` folder included in this project for them to work.
-There could be some bugs, so please report them, preferrably at the [REAPER forum](https://forum.cockos.com/showthread.php?t=246995)
+There could be some bugs, so please report them, preferrably at the [REAPER forum](https://forum.cockos.com/showthread.php?t=246995).
 
 **This is a work in progress, so there might be changes and more plugins to be guified.**
 
