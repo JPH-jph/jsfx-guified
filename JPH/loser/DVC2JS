@@ -1,0 +1,220 @@
+// (C) 2006-2007, Michael Gruhn.
+
+// NO WARRANTY IS GRANTED. THIS PLUG-IN IS PROVIDED ON AN "AS IS" BASIS, WITHOUT
+// WARRANTY OF ANY KIND. NO LIABILITY IS GRANTED, INCLUDING, BUT NOT LIMITED TO,
+// ANY DIRECT OR INDIRECT,  SPECIAL,  INCIDENTAL OR CONSEQUENTIAL DAMAGE ARISING
+// OUT OF  THE  USE  OR INABILITY  TO  USE  THIS PLUG-IN,  COMPUTER FAILTURE  OF
+// MALFUNCTION INCLUDED.  THE USE OF THE SOURCE CODE,  EITHER  PARTIALLY  OR  IN
+// TOTAL, IS ONLY GRANTED,  IF USED IN THE SENSE OF THE AUTHOR'S INTENTION,  AND
+// USED WITH ACKNOWLEDGEMENT OF THE AUTHOR. FURTHERMORE IS THIS PLUG-IN A  THIRD
+// PARTY CONTRIBUTION,  EVEN IF INCLUDED IN REAPER(TM),  COCKOS INCORPORATED  OR
+// ITS AFFILIATES HAVE NOTHING TO DO WITH IT.  LAST BUT NOT LEAST, BY USING THIS
+// PLUG-IN YOU RELINQUISH YOUR CLAIM TO SUE IT'S AUTHOR, AS WELL AS THE CLAIM TO
+// ENTRUST SOMEBODY ELSE WITH DOING SO.
+
+desc:DVC v2 - GUI
+desc:Digital Versatile Compressor v2 [LOSER]
+//tags: dynamics compressor limiter
+//author: LOSER
+
+//editor: JPH
+//wrote GUI, added limiter
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+slider1:-.1<-30,-.1,.1>-Threshold (dB)
+slider2:1<1,20,.1>-Ratio
+slider3:20<0,500,1>-Attack (ms)
+slider4:200<0,1000,1>-Release (ms)
+slider5:0<0,100,1>-RMS Size (ms)
+slider6:0<0,1,1{No,Yes}>-Auto Make-Up
+slider7:0<-12,12,.1>-Output (dB)
+slider8:0<0,1,1{Compress,Limit}>-Character
+slider9:0,-Reduction (dB)
+slider10:1<0,1,1{Off,On}>-Limiter
+slider14:0<0,6,1>-Theme
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+gain = seekgain = 1;
+c = 8.65617025;
+dc = 10^-30;
+
+gain = seekGain = 1;
+t = 0;
+b = -exp(-60 / srate );
+a = 1.0 + b;
+
+gr_meter=1;
+gr_meter_decay = exp(1/(1*srate));
+
+/////////////////////////////////////////
+//           @slider code              //
+needs_slider_update=1;
+function slider_update()
+(
+needs_slider_update=0;
+threshDB = slider1;
+thresh = exp(threshDB/c);
+ratio = 1/slider2;
+
+attack = exp( threshDB / (slider3*srate/1000) / c);
+release = exp( threshdB / (slider4*srate/1000) / c );
+rmsSize = floor(slider5/1000*srate);
+
+rms_size = floor(slider5/1000*srate);
+rmsSqrSum = rmsPos = 0;
+memset(0,0,rmsSize);
+
+volume = exp(slider7/c) / (slider6 ? exp(( threshDB -threshDB*ratio )/c)  : 1 );
+
+seekgain = 1;
+
+slider14 < 1 ? (
+    file=0;
+) : slider14 < 2 ? (
+    file=1;
+) : slider14 < 3 ? (
+    file=2;
+) : slider14 < 5 ? (
+    file=3;
+) : slider14 < 6 ? (
+    file=4;
+) : slider14 < 7 ? (
+    file=5;
+);
+
+);
+//////////////////////////////////////
+
+@slider
+// ui:gfx function=custom_gfx_func, height=300
+
+//////////////////////////////////////
+@block
+needs_slider_update ? slider_update();
+//////////////////////////////////////
+
+@sample
+rmsS = rms = max( abs(spl0) , abs(spl1) );
+rms = sqrt( (t = a*rms-b*t) );
+slider8 ? rms = max(rms,rmsS);
+
+
+rmsSize > 1 ? (
+  rmsSqrSum = max(rmsSqrSum - rmsPos[0],0) + (rmsPos[0] = sqr(rms));
+  (rmsPos+=1) >= rmsSize ? rmsPos=0;
+  rms = sqrt(rmsSqrSum/rmsSize);
+);
+
+seekGain = ((rms > thresh) ? exp((threshDB + (log(rms)*c-threshDB)*ratio) /c) / rms : 1);
+gain = ((gain > seekGain) ? max( gain*attack , seekGain ) : min( gain/release , seekGain ));
+spl0 *= gain * volume;
+spl1 *= gain * volume;
+
+slider10 == 1 ? (
+  outl = min(max(spl0,-0.98),0.98);
+  outr = min(max(spl1,-0.98),0.98);
+  spl0 = outl;
+  spl1 = outr;
+);
+
+slider9 = log(gain)*c;
+
+@gfx 800 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Digital Versatile Compressor v2", "dynamics | compressor | limiter");
+    
+    ui_font(#face, 14, 0, 0);
+        ui_split_leftratio(1/2);
+        control_group("");
+            ui_split_leftratio(1/3);
+            control_group("");
+                ui_split_topratio(8/9);
+                    ui_automate(slider1, labelled_dial(slider1,0, -30, -.1, 0, "treshold", slider1, "%.1f dB", 50,50,14));
+                ui_pop();
+                
+                ui_automate(slider8, labelled_switch(slider8, "comp         ", "limit        "));
+                
+            ui_split_next();
+            control_group("");
+                ui_split_topratio(8/9);
+                    ui_automate(slider2, labelled_dial(slider2,0, 0, 20, 0, "ratio", slider2, "%.1f", 50,50,14));
+                ui_pop();
+                
+                ui_automate(slider6, oneway_switch_mid(slider6, "autogain", 15, 11));
+                
+            ui_split_next();
+            control_group("");
+                ui_split_topratio(8/9);
+                    ui_automate(slider7, labelled_dial(slider7,0, -12, 12, 0, "output", slider7, "%.1f dB", 50,50,14));
+                ui_pop();
+                
+                ui_automate(slider10, oneway_switch_mid(slider10, "limit", 15, 11));
+                
+            ui_pop();
+        ui_pop();
+        
+        ui_split_topratio(1/2);
+        control_group("envelope");
+            ui_split_leftratio(1/3);
+                ui_automate(slider3, labelled_dial(slider3,20, 0, 500, 0, "attack", slider3, "%i ms", 30,30,14));
+            ui_split_next();
+                ui_automate(slider4, labelled_dial(slider4,200, 0, 1000, 0, "release", slider4, "%i ms", 30,30,14));
+            ui_split_next(); 
+                ui_automate(slider5, labelled_dial(slider5,0, 0, 100, 0, "rms", slider5, "%i ms", 30,30,14));
+            ui_pop();
+          
+        ui_split_next();
+        control_group("meter");
+            ui_automate(slider9, labelled_meter(slider9, 0, -30, 0, "output", slider9, "%.1f dB", 0));
+        ui_pop();
+ 
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 15, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("
+author: LOSER
+
+editor: JPH
+-GUI (using Geraint Luff's API)
+-added limiter");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider14 = labelled_dial(slider14, 0, 0, 6, 0, "theme", slider14, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

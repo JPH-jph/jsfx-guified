@@ -1,0 +1,159 @@
+// (C) 2007, Michael Gruhn.
+
+// NO WARRANTY IS GRANTED. THIS PLUG-IN IS PROVIDED ON AN "AS IS" BASIS, WITHOUT
+// WARRANTY OF ANY KIND. NO LIABILITY IS GRANTED, INCLUDING, BUT NOT LIMITED TO,
+// ANY DIRECT OR INDIRECT,  SPECIAL,  INCIDENTAL OR CONSEQUENTIAL DAMAGE ARISING
+// OUT OF  THE  USE  OR INABILITY  TO  USE  THIS PLUG-IN,  COMPUTER FAILTURE  OF
+// MALFUNCTION INCLUDED.  THE USE OF THE SOURCE CODE,  EITHER  PARTIALLY  OR  IN
+// TOTAL, IS ONLY GRANTED,  IF USED IN THE SENSE OF THE AUTHOR'S INTENTION,  AND
+// USED WITH ACKNOWLEDGEMENT OF THE AUTHOR. FURTHERMORE IS THIS PLUG-IN A  THIRD
+// PARTY CONTRIBUTION,  EVEN IF INCLUDED IN REAPER(TM),  COCKOS INCORPORATED  OR
+// ITS AFFILIATES HAVE NOTHING TO DO WITH IT.  LAST BUT NOT LEAST, BY USING THIS
+// PLUG-IN YOU RELINQUISH YOUR CLAIM TO SUE IT'S AUTHOR, AS WELL AS THE CLAIM TO
+// ENTRUST SOMEBODY ELSE WITH DOING SO.
+
+desc:Exciter - GUI
+desc:Exciter [LOSER]
+//tags: processing exciter distortion
+//author: LOSER
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+slider1:2000<20,18000,1>-Frequency (Hz)
+slider2:0<0,6,.1>-Clip Boost (dB)
+slider3:0<0,100,1>-Harmonics (%)
+slider4:-6<-120,0,.1>-Mix Back (dB)
+slider5:0<0,2,1>-Theme
+slider14:0<0,6,1>-Theme
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+c_ampDB = 8.65617025;
+cDenorm=10^-30;
+
+/////////////////////////////////////////
+//           @slider code              //
+needs_slider_update=1;
+function slider_update()
+(
+needs_slider_update=0;
+clipBoost = exp(slider2/c_ampDB);
+mixBack = exp(slider4/c_ampDB);
+
+hdistr = min(slider3/100,.9);
+foo = 2*hdistr/(1-hdistr);
+
+freq = min(slider1,srate);
+x = exp(-2.0*$pi*freq/srate);
+a0 = 1.0-x;
+b1 = -x;
+
+slider14 < 1 ? (
+    file=0;
+) : slider14 < 2 ? (
+    file=1;
+) : slider14 < 3 ? (
+    file=2;
+) : slider14 < 5 ? (
+    file=3;
+) : slider14 < 6 ? (
+    file=4;
+) : slider14 < 7 ? (
+    file=5;
+);
+
+);
+//////////////////////////////////////
+
+@slider
+// ui:gfx function=custom_gfx_func, height=300
+
+//////////////////////////////////////
+@block
+needs_slider_update ? slider_update();
+//////////////////////////////////////
+
+@sample
+s0 = spl0;
+s1 = spl1;
+
+s0 -= (tmplONE = a0*s0 - b1*tmplONE + cDenorm);
+s1 -= (tmprONE = a0*s1 - b1*tmprONE + cDenorm);
+
+s0 = min(max(s0*clipBoost,-1),1);
+s1 = min(max(s1*clipBoost,-1),1);
+
+s0 = (1+foo)*s0/(1+foo*abs(spl0));
+s1 = (1+foo)*s1/(1+foo*abs(spl1));
+
+s0 -= (tmplTWO = a0*s0 - b1*tmplTWO + cDenorm);
+s1 -= (tmprTWO = a0*s1 - b1*tmprTWO + cDenorm);
+
+spl0 += s0 * mixBack;
+spl1 += s1 * mixBack;
+
+@gfx 60 200
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+  title_desc("Exciter", "processing |  exciter | distortion");
+              
+      ui_split_topratio(20/20);
+          ui_split_leftratio(5/5);
+              control_group("");
+              ui_split_leftratio(1/4);
+                  ui_automate(slider1, labelled_dial(slider1, 2000, 20, 18000, 0, "frequency", slider1, "%i Hz", 50,50,14));
+              ui_split_next();
+                  ui_automate(slider3, labelled_dial(slider3, 0, 0, 100, 0, "harmonics", slider3, "%i %%", 50,50,14));
+              ui_split_next();
+                  ui_automate(slider2, labelled_dial(slider2, 0, 0, 6, 0, "boost", slider2, "%.1f dB", 50,50,14));
+              ui_split_next();
+                  ui_automate(slider4, labelled_dial(slider4, -6, -6, -120, 0, "trim", slider4, "%.1f dB", 50,50,14));
+              ui_pop();
+      ui_pop();
+      
+
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 14, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("author: LOSER
+
+editor: JPH
+-GUI (using Geraint Luff's API)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider14 = labelled_dial(slider14, 0, 0, 6, 0, "theme", slider14, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

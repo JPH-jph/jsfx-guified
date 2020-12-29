@@ -1,0 +1,203 @@
+// (C) 2007, Michael Gruhn.
+
+// NO WARRANTY IS GRANTED. THIS PLUG-IN IS PROVIDED ON AN "AS IS" BASIS, WITHOUT
+// WARRANTY OF ANY KIND. NO LIABILITY IS GRANTED, INCLUDING, BUT NOT LIMITED TO,
+// ANY DIRECT OR INDIRECT,  SPECIAL,  INCIDENTAL OR CONSEQUENTIAL DAMAGE ARISING
+// OUT OF  THE  USE  OR INABILITY  TO  USE  THIS PLUG-IN,  COMPUTER FAILTURE  OF
+// MALFUNCTION INCLUDED.  THE USE OF THE SOURCE CODE,  EITHER  PARTIALLY  OR  IN
+// TOTAL, IS ONLY GRANTED,  IF USED IN THE SENSE OF THE AUTHOR'S INTENTION,  AND
+// USED WITH ACKNOWLEDGEMENT OF THE AUTHOR. FURTHERMORE IS THIS PLUG-IN A  THIRD
+// PARTY CONTRIBUTION,  EVEN IF INCLUDED IN REAPER(TM),  COCKOS INCORPORATED  OR
+// ITS AFFILIATES HAVE NOTHING TO DO WITH IT.  LAST BUT NOT LEAST, BY USING THIS
+// PLUG-IN YOU RELINQUISH YOUR CLAIM TO SUE IT'S AUTHOR, AS WELL AS THE CLAIM TO
+// ENTRUST SOMEBODY ELSE WITH DOING SO.
+
+desc:Waveshaper - GUI
+//tags: processing distortion waveshaper
+//author: LOSER
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+slider1:0<0,100,.1>-Distortion (%)
+slider2:0<0,100,1>-HP (%)
+slider3:0<-25,25,0.05>-Output (dB)
+slider14:0<0,6,1>-Theme
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+
+/////////////////////////////////////////
+//           @slider code              //
+needs_slider_update=1;
+function slider_update()
+(
+needs_slider_update=0;
+//exp scale
+sx = 16+slider2*1.20103;
+cutoff = floor(exp(sx*log(1.059))*8.17742);
+
+//coeff
+cutoff = min(cutoff,20000);
+lp_cut = 2*$pi*cutoff;
+lp_n = 1/(lp_cut+ 3*srate);
+lp_b1 = (3*srate - lp_cut)*lp_n;
+lp_a0 = lp_cut*lp_n;
+
+//outgain
+outgain = 10^(slider3/20);
+
+hdistr = min(slider1/100,.999);
+foo = 2*hdistr/(1-hdistr);
+
+slider14 < 1 ? (
+    file=0;
+) : slider14 < 2 ? (
+    file=1;
+) : slider14 < 3 ? (
+    file=2;
+) : slider14 < 5 ? (
+    file=3;
+) : slider14 < 6 ? (
+    file=4;
+) : slider14 < 7 ? (
+    file=5;
+);
+
+);
+//////////////////////////////////////
+
+@slider
+// ui:gfx function=custom_gfx_func, height=300
+
+//////////////////////////////////////
+@block
+needs_slider_update ? slider_update();
+//////////////////////////////////////
+
+@sample
+//simplelp6dbfilter
+inl = spl0;
+inr = spl1;
+lp_outl = 2*inl*lp_a0 + lp_outl*lp_b1;
+lp_outr = 2*inr*lp_a0 + lp_outr*lp_b1;
+
+spl0 = (inl-lp_outl)*outgain;
+spl1 = (inr-lp_outr)*outgain;
+
+//waveshaper
+spl0 = min(max(spl0,-1),1);
+spl1 = min(max(spl1,-1),1);
+
+spl0 = (1+foo)*spl0/(1+foo*abs(spl0));
+spl1 = (1+foo)*spl1/(1+foo*abs(spl1));
+
+
+@gfx 560 192
+
+function draw_distortion() local(x, y, width, height, top, left) (
+gfx_w=gfx_w*0.4;
+control_background_technical();
+
+gfxSize = min(gfx_w,gfx_h);
+gfx_h=0;gfx_w=0; //remove background
+
+gfx_r=gfx_g=gfx_b=0; gfx_a=1;
+gfx_x=gfx_y=0;
+gfx_rectto(gfx_w,gfx_h);
+
+gfx_r=gfx_g=gfx_b=0.8; gfx_a=1;
+gfx_x=gfxSize/2; gfx_y=0;
+gfx_lineto(gfxSize/2,gfxSize,0);
+gfx_x=0; gfx_y=gfxSize/2;
+gfx_lineto(gfxSize,gfxSize/2,0);
+
+gfx_x = gfxSize-25; gfx_y = gfxSize/2;
+gfx_drawchar($'I');
+gfx_drawchar($'N');
+
+gfx_x = gfxSize/2+2; gfx_y = 5;
+gfx_drawchar($'O');
+gfx_drawchar($'U');
+gfx_drawchar($'T');
+
+slider1 ? (
+  gfx_r=0.5; gfx_g=1; gfx_b=0; gfx_a=1;
+  gfx_x=0; gfx_y=gfxSize;
+  x = -1;
+  while(
+    y = -(1+foo)*x/(1+foo*abs(x));
+    gfx_lineto(x*gfxSize/2+gfxSize/2,y*gfxSize/2+gfxSize/2,1);
+    (x+=0.05) <= 1;
+  );
+  gfx_lineto(gfxSize,0,1);
+):(
+  gfx_r=0.5; gfx_g=1; gfx_b=0; gfx_a=1;
+  gfx_x=0; gfx_y=gfxSize;
+  gfx_lineto(gfxSize,0,1);
+);
+control_finish_technical();
+ui_pad();
+       
+);
+
+
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+ui_split_rightratio(0.6);
+title_desc("Waveshaper", "processing | distortion");
+    control_group("");
+        ui_split_leftratio(1/3);
+            ui_automate(slider1, labelled_dial(slider1, 0, 0, 100, 0, "amount", slider1, "%.1f %%", 50, 60, 14 ));
+        ui_split_next();
+            ui_automate(slider2, labelled_dial(slider2, 0, 0, 100, 0, "pre hp", slider2, "%i %%", 50, 60, 14 ));
+        ui_split_next();
+            ui_automate(slider3, labelled_dial(slider3, 0, -24, 24, 0, "out", slider3, "%.1f dB", 50, 60, 14 ));
+        ui_pop();
+    
+    ui_split_next();
+    
+    draw_distortion();
+    
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 15, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("author: LOSER
+
+editor: JPH
+-GUI (using Geraint Luff's API)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider14 = labelled_dial(slider14, 0, 0, 6, 0, "theme", slider14, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

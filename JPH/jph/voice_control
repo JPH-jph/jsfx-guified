@@ -1,0 +1,277 @@
+desc:Voice Control - GUI
+//author: JPH
+//a collection of mostly witti's plugins
+//made this just to control mic levels when using voice chat
+//definitely not perfect, but does the job for me
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+//filter + gate
+slider1:0<-150,0,1>-gain (dB)
+slider2:41<0,100,1>-HP (%)
+slider3:-45<-120,0,0.1>-Threshold (dB)
+slider4:0.01<0.01,10,0.01>-Attack (ms)
+slider5:117<20,200,1>-Release (ms)
+slider6:100<10,100,1>-Env Decay (ms)
+
+//comp
+slider7:-13<-30,0,0.1>-Threshold (dB)
+slider8:4<1,20,0.1>-Ratio
+slider9:3<1,20,0.1>-Attack (ms)
+slider10:100<20,1000,1>-Release (ms)
+slider11:50<10,100,1>-Env Decay (ms)
+slider12:1<0,1,1{Off,On}>-Softknee
+
+//limit
+slider13:-15<-60,0,0.1>-Threshold (dB)
+slider14:0<0,60,0.1>-Knee (dB)
+slider15:300<50,1000,1>-Release (ms)
+slider16:-2<-12,0,0.1>-Ceiling (dB)
+
+slider20:0<0,6,1>-Theme
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+gain = 1;
+env = 0;
+env_comp = 0;
+output = 1;
+transfer_A = 0;
+transfer_B = 1;
+
+//limit
+dbc = 20/log(10);
+function db2ratio(d) ( 10^(d/20); );
+function ratio2db(r) ( log(abs(r))*dbc; );
+
+threshold_limit = slider13;
+knee_width = slider14;
+ceiling = 1/(db2ratio(threshold_limit));
+slope = -1;
+
+release_limit = slider15/1000;
+alphaR = release_limit>0 ? exp(-1 / (release_limit * srate)) : 0;
+
+Tlo = (threshold_limit - knee_width / 2);
+Thi = (threshold_limit + knee_width / 2);
+knee_factor = (slope / (knee_width * 2));
+
+yR = 0;
+
+function computeGain(x)
+(
+(x < Tlo) ? x = 0 :
+(x > Thi) ? x = slope * (x - threshold_limit) :
+(delta = x - Tlo;
+x = delta * delta * knee_factor;);
+);
+
+function smoothAverage(x, alphaR)
+(
+eps = 0.0000000001;
+yR = min(x, alphaR * yR + (1 - alphaR) * x + eps - eps);
+x = yR;
+);
+
+/////////////////////////////////////////
+//           @slider code              //
+needs_slider_update=1;
+function slider_update()
+(
+needs_slider_update=0;
+    //gain
+    outgain=10^(slider16/20);
+    
+    //filter
+    sx = 16+slider2*1.20103;
+    cutoff = floor(exp(sx*log(1.059))*8.17742);
+    
+    //coeff
+    cutoff = min(cutoff,20000);
+    lp_cut = 2*$pi*cutoff;
+    lp_n = 1/(lp_cut+ 3*srate);
+    lp_b1 = (3*srate - lp_cut)*lp_n;
+    lp_a0 = lp_cut*lp_n;
+    
+    //gate
+    threshold = 10^(slider3/20);
+    attack = exp(-1/(slider4/1000*srate));
+    release = exp(-1/(slider5/1000*srate));
+    envelope_decay = exp(-1/(slider6/1000*srate));
+    
+    //comp
+    threshold_comp = 10^(slider7/20);
+    ratio = slider8;
+    soft = slider12;
+    attack_comp = exp(-1/(slider9/1000*srate));
+    release_comp = exp(-1/(slider10/1000*srate));
+    envelope_decay_comp = exp(-1/(slider11/1000*srate));
+    
+    //limit
+    threshold_limit = slider13;
+    knee_width = slider14;
+    ceiling = 1/(db2ratio(threshold_limit));
+    slope = -1;
+    
+    release_limit = slider15/1000;
+    alphaR = release_limit>0 ? exp(-1 / (release_limit * srate)) : 0;
+    
+    Tlo = (threshold_limit - knee_width / 2);
+    Thi = (threshold_limit + knee_width / 2);
+    knee_factor = (slope / (knee_width * 2));
+    
+slider20 < 1 ? (
+    file=0;
+) : slider20 < 2 ? (
+    file=1;
+) : slider20 < 3 ? (
+    file=2;
+) : slider20 < 5 ? (
+    file=3;
+) : slider20 < 6 ? (
+    file=4;
+) : slider20 < 7 ? (
+    file=5;
+);
+
+);
+//////////////////////////////////////
+
+@slider
+// ui:gfx function=custom_gfx_func, height=300
+
+//////////////////////////////////////
+@block
+needs_slider_update ? slider_update();
+//////////////////////////////////////
+
+@sample
+//mono hp filter
+inl = (spl0+spl1)/2;
+lp_outl = 2*inl*lp_a0 + lp_outl*lp_b1;
+
+//w_gate
+det = abs(inl);
+det += 0.000000000001;
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = env > threshold ? pow(env,0):0;
+gain = transfer_gain > gain ? transfer_gain+attack*(gain-transfer_gain) : transfer_gain+release*(gain-transfer_gain);
+
+gatel = (inl-lp_outl) * gain;
+
+//softknee_comp
+env_comp = det >= env_comp ? det : det+envelope_decay_comp*(env_comp-det);
+diff = abs(det-threshold_comp);
+tmp = 1 + (ratio -1) * min(diff,1);
+soft ? (
+transfer_A = (1/tmp)-1;
+):(
+transfer_A = (1/ratio)-1;
+);
+transfer_B = output * pow(threshold_comp,-transfer_A);
+
+transfer_gain = env_comp > threshold ? pow(env_comp,transfer_A)*transfer_B:output;
+gain_comp = transfer_gain < gain ? transfer_gain+attack*(gain-transfer_gain) : transfer_gain+release*(gain-transfer_gain);
+
+compl = gatel * gain_comp;
+
+//softknee_limiter
+xL = abs(compl);
+
+xG = ratio2db(xL);
+yG = computeGain(xG);
+cG = smoothAverage(yG, alphaR);
+cL = db2ratio(cG);
+
+//out
+spl0 = spl1 = compl * cL * ceiling * outgain;
+
+@gfx 200 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Voice control", "fxrack | voice | mono");
+  
+
+    ui_split_topratio(1/2);
+      ui_split_leftratio(1/4);
+          control_group("filter");
+              ui_automate(slider2, labelled_dial(slider2, 41, 0, 100, 0, "HP", slider2, "%i %%", 30,30,14));
+          
+      ui_pop();
+          control_group("gate");
+          ui_split_leftratio(1/4);
+              ui_automate(slider3, labelled_dial(slider3, -45, -120, 0, 0, "treshold", slider3, "%.1f dB", 30,30,14));
+          ui_split_next();
+              ui_automate(slider4, labelled_dial(slider4, 0.01, 0.01, 10, 0, "attack", slider4, "%.2f ms", 30,30,14));
+          ui_split_next();
+              ui_automate(slider6, labelled_dial(slider6, 100, 10, 100, 0, "decay", slider6, "%i ms", 30,30,14));
+          ui_split_next();
+              ui_automate(slider5, labelled_dial(slider5, 117, 20, 200, 0, "release", slider5, "%i ms", 30,30,14));
+        
+      ui_pop();
+    ui_pop();
+    
+    ui_split_leftratio(2/4);
+        control_group("comp");
+        ui_split_leftratio(1/2);
+              ui_automate(slider7, labelled_dial(slider7, -13, -30, 0, 0, "treshold", slider7, "%.1f dB", 30,30,14));
+          ui_split_next();
+              ui_automate(slider8, labelled_dial(slider8, 4, 1, 20, 0, "ratio", slider8, "%i", 30,30,14));
+        ui_pop();
+        
+    ui_split_next();
+        control_group("limiter");
+        ui_split_leftratio(1/2);
+            ui_automate(slider13, labelled_dial(slider13, -15, -30, 0, 0, "treshold", slider13, "%.1f dB", 30,30,14));
+        ui_split_next();
+            ui_automate(slider16, labelled_dial(slider16, 0, -12, 0, 0, "ceiling", slider16, "%.1f dB", 30,30,14));
+      ui_pop();
+    ui_pop();
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 14, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("author: JPH
+  
+a collection of mostly witti's plugins
+made this just to control mic levels when using voice chat
+definitely not perfect, but does the job for me
+
+-GUI (using Geraint Luff's API");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider20 = labelled_dial(slider20, 0, 0, 6, 0, "theme", slider20, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

@@ -1,0 +1,466 @@
+desc:31 Band EQ - GUI
+
+/*
+	by sault
+	
+	v 0.9
+	10-30-2020
+
+	hardcoded to 2x to keep higher frequencies from
+	being too cramped
+	
+	requires rbj_filter.jsfx-inc
+	
+	(thank you Tale)
+
+*/
+
+slider1:0<-15,15,0.1>-Gain (dB)
+slider5:0<0,6,1{off,25,50,75,100,125,150}>-highpass (Hz)
+
+slider10:0<-15,15,0.1>-20 Hz
+slider11:0<-15,15,0.1>-25 Hz
+slider12:0<-15,15,0.1>-31.5 Hz
+slider13:0<-15,15,0.1>-40 Hz
+slider14:0<-15,15,0.1>-50 Hz
+slider15:0<-15,15,0.1>-63 Hz
+slider16:0<-15,15,0.1>-80 Hz
+slider17:0<-15,15,0.1>-100 Hz
+slider18:0<-15,15,0.1>-125 Hz
+slider19:0<-15,15,0.1>-160 Hz
+slider20:0<-15,15,0.1>-200 Hz
+slider21:0<-15,15,0.1>-250 Hz
+slider22:0<-15,15,0.1>-315 Hz
+slider23:0<-15,15,0.1>-400 Hz
+slider24:0<-15,15,0.1>-500 Hz
+slider25:0<-15,15,0.1>-630 Hz
+slider26:0<-15,15,0.1>-800 Hz
+slider27:0<-15,15,0.1>-1 kHz
+slider28:0<-15,15,0.1>-1.25 kHz
+slider29:0<-15,15,0.1>-1.6 kHz
+slider30:0<-15,15,0.1>-2 kHz
+slider31:0<-15,15,0.1>-2.5 kHz
+slider32:0<-15,15,0.1>-3.15 kHz
+slider33:0<-15,15,0.1>-4 kHz
+slider34:0<-15,15,0.1>-5 kHz
+slider35:0<-15,15,0.1>-6.3 kHz
+slider36:0<-15,15,0.1>-8 kHz
+slider37:0<-15,15,0.1>-10 kHz
+slider38:0<-15,15,0.1>-12.5 kHz
+slider39:0<-15,15,0.1>-16 kHz
+slider40:0<-15,15,0.1>-20 kHz
+slider41:0<0,6,1>-Theme
+
+//////////////////////////////////////////
+import rbj_filter.jsfx-inc
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+// begin oversampling code
+
+function os_os2()
+  instance(y18, y17, y16, y15, y14, y13, y12, y11, y10,
+		y9, y8, y7, y6, y5, y4, y3, y2, y1, y0)
+(
+  y18 = y16; y17 = y15; y16 = y14; y15 = y13;
+  y14 = y12; y13 = y11; y12 = y10; y11 =  y9;
+  y10 =  y8;  y9 =  y7;  y8 =  y6;  y7 =  y5;
+   y6 =  y4;  y5 =  y3;  y4 =  y2;  y3 =  y1;
+   y2 =  y0;
+);
+
+function os_up2(x)
+  instance(x9, x8, x7, x6, x5, x4, x3, x2, x1, x0,
+	   y18, y17, y16, y15, y14, y13, y12, y11, y10,
+		y9, y8, y7, y6, y5, y4, y3, y2, y1, y0)
+(
+  x9 = x8; x8 = x7; x7 = x6; x6 = x5; x5 = x4; x4 = x3;
+  x3 = x2; x2 = x1; x1 = x0; x0 = x * 2;
+
+  this.os_os2();
+  y1 = 0.0028*(x0+x9) - 0.0118*(x1+x8) + 0.0334*(x2+x7)
+  - 0.0849*(x3+x6) + 0.3106*(x4+x5);
+  y0 = 0.5*x4;
+);
+
+
+function os_down2()
+  instance(y18, y16, y14, y12, y10, y9, y8, y6, y4, y2, y0)
+(
+  0.0028*(y0+y18) - 0.0118*(y2+y16) + 0.0334*(y4+y14)
+  - 0.0849*(y6+y12) + 0.3106*(y8+y10) + 0.5*y9;
+);
+
+// end oversampling code
+
+function db2r(db) ( 10^(db * 0.05); );
+
+/////////////////////////////////////////
+//           @slider code              //
+needs_slider_update=1;
+function slider_update()
+(
+needs_slider_update=0;
+gain = db2r(slider1);
+
+hpfreq = slider5 * 25 + 1;
+
+hp0.rbj_hp(hpfreq,0.7071);
+hp1.rbj_hp(hpfreq,0.7071);
+
+band000.rbj_eq(     20          *0.5     ,4.318,db2r(slider10) );
+band001.rbj_eq(     25          *0.5     ,4.318,db2r(slider11) );
+band002.rbj_eq(     31.5     *0.5     ,4.318,db2r(slider12) );
+band003.rbj_eq(     40          *0.5     ,4.318,db2r(slider13) );
+band004.rbj_eq(     50          *0.5     ,4.318,db2r(slider14) );
+band005.rbj_eq(     63          *0.5     ,4.318,db2r(slider15) );
+band006.rbj_eq(     80          *0.5     ,4.318,db2r(slider16) );
+band007.rbj_eq(     100          *0.5     ,4.318,db2r(slider17) );
+band008.rbj_eq(     125          *0.5     ,4.318,db2r(slider18) );
+band009.rbj_eq(     160          *0.5     ,4.318,db2r(slider19) );
+band010.rbj_eq(     200          *0.5     ,4.318,db2r(slider20) );
+band011.rbj_eq(     250          *0.5     ,4.318,db2r(slider21) );
+band012.rbj_eq(     315          *0.5     ,4.318,db2r(slider22) );
+band013.rbj_eq(     400          *0.5     ,4.318,db2r(slider23) );
+band014.rbj_eq(     500          *0.5     ,4.318,db2r(slider24) );
+band015.rbj_eq(     630          *0.5     ,4.318,db2r(slider25) );
+band016.rbj_eq(     800          *0.5     ,4.318,db2r(slider26) );
+band017.rbj_eq(     1000     *0.5     ,4.318,db2r(slider27) );
+band018.rbj_eq(     1250     *0.5     ,4.318,db2r(slider28) );
+band019.rbj_eq(     1600     *0.5     ,4.318,db2r(slider29) );
+band020.rbj_eq(     2000     *0.5     ,4.318,db2r(slider30) );
+band021.rbj_eq(     2500     *0.5     ,4.318,db2r(slider31) );
+band022.rbj_eq(     3150     *0.5     ,4.318,db2r(slider32) );
+band023.rbj_eq(     4000     *0.5     ,4.318,db2r(slider33) );
+band024.rbj_eq(     5000     *0.5     ,4.318,db2r(slider34) );
+band025.rbj_eq(     6300     *0.5     ,4.318,db2r(slider35) );
+band026.rbj_eq(     8000     *0.5     ,4.318,db2r(slider36) );
+band027.rbj_eq(     10000     *0.5     ,4.318,db2r(slider37) );
+band028.rbj_eq(     12500     *0.5     ,4.318,db2r(slider38) );
+band029.rbj_eq(     16000     *0.5     ,4.318,db2r(slider39) );
+band030.rbj_eq(     20000     *0.5     ,4.318,db2r(slider40) );
+
+band100.rbj_eq(     20          *0.5     ,4.318,db2r(slider10) );
+band101.rbj_eq(     25          *0.5     ,4.318,db2r(slider11) );
+band102.rbj_eq(     31.5     *0.5     ,4.318,db2r(slider12) );
+band103.rbj_eq(     40          *0.5     ,4.318,db2r(slider13) );
+band104.rbj_eq(     50          *0.5     ,4.318,db2r(slider14) );
+band105.rbj_eq(     63          *0.5     ,4.318,db2r(slider15) );
+band106.rbj_eq(     80          *0.5     ,4.318,db2r(slider16) );
+band107.rbj_eq(     100          *0.5     ,4.318,db2r(slider17) );
+band108.rbj_eq(     125          *0.5     ,4.318,db2r(slider18) );
+band109.rbj_eq(     160          *0.5     ,4.318,db2r(slider19) );
+band110.rbj_eq(     200          *0.5     ,4.318,db2r(slider20) );
+band111.rbj_eq(     250          *0.5     ,4.318,db2r(slider21) );
+band112.rbj_eq(     315          *0.5     ,4.318,db2r(slider22) );
+band113.rbj_eq(     400          *0.5     ,4.318,db2r(slider23) );
+band114.rbj_eq(     500          *0.5     ,4.318,db2r(slider24) );
+band115.rbj_eq(     630          *0.5     ,4.318,db2r(slider25) );
+band116.rbj_eq(     800          *0.5     ,4.318,db2r(slider26) );
+band117.rbj_eq(     1000     *0.5     ,4.318,db2r(slider27) );
+band118.rbj_eq(     1250     *0.5     ,4.318,db2r(slider28) );
+band119.rbj_eq(     1600     *0.5     ,4.318,db2r(slider29) );
+band120.rbj_eq(     2000     *0.5     ,4.318,db2r(slider30) );
+band121.rbj_eq(     2500     *0.5     ,4.318,db2r(slider31) );
+band122.rbj_eq(     3150     *0.5     ,4.318,db2r(slider32) );
+band123.rbj_eq(     4000     *0.5     ,4.318,db2r(slider33) );
+band124.rbj_eq(     5000     *0.5     ,4.318,db2r(slider34) );
+band125.rbj_eq(     6300     *0.5     ,4.318,db2r(slider35) );
+band126.rbj_eq(     8000     *0.5     ,4.318,db2r(slider36) );
+band127.rbj_eq(     10000     *0.5     ,4.318,db2r(slider37) );
+band128.rbj_eq(     12500     *0.5     ,4.318,db2r(slider38) );
+band129.rbj_eq(     16000     *0.5     ,4.318,db2r(slider39) );
+band130.rbj_eq(     20000     *0.5     ,4.318,db2r(slider40) );
+  
+slider41 < 1 ? (
+    file=0;
+) : slider41 < 2 ? (
+    file=1;
+) : slider41 < 3 ? (
+    file=2;
+) : slider41 < 5 ? (
+    file=3;
+) : slider41 < 6 ? (
+    file=4;
+) : slider41 < 7 ? (
+    file=5;
+);
+  
+);
+//////////////////////////////////////
+
+@slider
+// ui:gfx function=custom_gfx_func, height=300
+
+//////////////////////////////////////
+@block
+needs_slider_update ? slider_update();
+//////////////////////////////////////
+
+@sample
+
+spl0 *= gain;
+spl1 *= gain;
+
+slider5 ? (
+	spl0 = hp0.rbj_tdf2(spl0);
+	spl1 = hp1.rbj_tdf2(spl1);
+	);
+
+os0.os_up2(spl0);
+os1.os_up2(spl1);
+
+os0.y1 = band000.rbj_tdf2( os0.y1 );
+os0.y1 = band001.rbj_tdf2( os0.y1 );
+os0.y1 = band002.rbj_tdf2( os0.y1 );
+os0.y1 = band003.rbj_tdf2( os0.y1 );
+os0.y1 = band004.rbj_tdf2( os0.y1 );
+os0.y1 = band005.rbj_tdf2( os0.y1 );
+os0.y1 = band006.rbj_tdf2( os0.y1 );
+os0.y1 = band007.rbj_tdf2( os0.y1 );
+os0.y1 = band008.rbj_tdf2( os0.y1 );
+os0.y1 = band009.rbj_tdf2( os0.y1 );
+os0.y1 = band010.rbj_tdf2( os0.y1 );
+os0.y1 = band011.rbj_tdf2( os0.y1 );
+os0.y1 = band012.rbj_tdf2( os0.y1 );
+os0.y1 = band013.rbj_tdf2( os0.y1 );
+os0.y1 = band014.rbj_tdf2( os0.y1 );
+os0.y1 = band015.rbj_tdf2( os0.y1 );
+os0.y1 = band016.rbj_tdf2( os0.y1 );
+os0.y1 = band017.rbj_tdf2( os0.y1 );
+os0.y1 = band018.rbj_tdf2( os0.y1 );
+os0.y1 = band019.rbj_tdf2( os0.y1 );
+os0.y1 = band020.rbj_tdf2( os0.y1 );
+os0.y1 = band021.rbj_tdf2( os0.y1 );
+os0.y1 = band022.rbj_tdf2( os0.y1 );
+os0.y1 = band023.rbj_tdf2( os0.y1 );
+os0.y1 = band024.rbj_tdf2( os0.y1 );
+os0.y1 = band025.rbj_tdf2( os0.y1 );
+os0.y1 = band026.rbj_tdf2( os0.y1 );
+os0.y1 = band027.rbj_tdf2( os0.y1 );
+os0.y1 = band028.rbj_tdf2( os0.y1 );
+os0.y1 = band029.rbj_tdf2( os0.y1 );
+os0.y1 = band030.rbj_tdf2( os0.y1 );
+
+os0.y0 = band000.rbj_tdf2( os0.y0 );
+os0.y0 = band001.rbj_tdf2( os0.y0 );
+os0.y0 = band002.rbj_tdf2( os0.y0 );
+os0.y0 = band003.rbj_tdf2( os0.y0 );
+os0.y0 = band004.rbj_tdf2( os0.y0 );
+os0.y0 = band005.rbj_tdf2( os0.y0 );
+os0.y0 = band006.rbj_tdf2( os0.y0 );
+os0.y0 = band007.rbj_tdf2( os0.y0 );
+os0.y0 = band008.rbj_tdf2( os0.y0 );
+os0.y0 = band009.rbj_tdf2( os0.y0 );
+os0.y0 = band010.rbj_tdf2( os0.y0 );
+os0.y0 = band011.rbj_tdf2( os0.y0 );
+os0.y0 = band012.rbj_tdf2( os0.y0 );
+os0.y0 = band013.rbj_tdf2( os0.y0 );
+os0.y0 = band014.rbj_tdf2( os0.y0 );
+os0.y0 = band015.rbj_tdf2( os0.y0 );
+os0.y0 = band016.rbj_tdf2( os0.y0 );
+os0.y0 = band017.rbj_tdf2( os0.y0 );
+os0.y0 = band018.rbj_tdf2( os0.y0 );
+os0.y0 = band019.rbj_tdf2( os0.y0 );
+os0.y0 = band020.rbj_tdf2( os0.y0 );
+os0.y0 = band021.rbj_tdf2( os0.y0 );
+os0.y0 = band022.rbj_tdf2( os0.y0 );
+os0.y0 = band023.rbj_tdf2( os0.y0 );
+os0.y0 = band024.rbj_tdf2( os0.y0 );
+os0.y0 = band025.rbj_tdf2( os0.y0 );
+os0.y0 = band026.rbj_tdf2( os0.y0 );
+os0.y0 = band027.rbj_tdf2( os0.y0 );
+os0.y0 = band028.rbj_tdf2( os0.y0 );
+os0.y0 = band029.rbj_tdf2( os0.y0 );
+os0.y0 = band030.rbj_tdf2( os0.y0 );
+
+os1.y1 = band100.rbj_tdf2( os1.y1 );
+os1.y1 = band101.rbj_tdf2( os1.y1 );
+os1.y1 = band102.rbj_tdf2( os1.y1 );
+os1.y1 = band103.rbj_tdf2( os1.y1 );
+os1.y1 = band104.rbj_tdf2( os1.y1 );
+os1.y1 = band105.rbj_tdf2( os1.y1 );
+os1.y1 = band106.rbj_tdf2( os1.y1 );
+os1.y1 = band107.rbj_tdf2( os1.y1 );
+os1.y1 = band108.rbj_tdf2( os1.y1 );
+os1.y1 = band109.rbj_tdf2( os1.y1 );
+os1.y1 = band110.rbj_tdf2( os1.y1 );
+os1.y1 = band111.rbj_tdf2( os1.y1 );
+os1.y1 = band112.rbj_tdf2( os1.y1 );
+os1.y1 = band113.rbj_tdf2( os1.y1 );
+os1.y1 = band114.rbj_tdf2( os1.y1 );
+os1.y1 = band115.rbj_tdf2( os1.y1 );
+os1.y1 = band116.rbj_tdf2( os1.y1 );
+os1.y1 = band117.rbj_tdf2( os1.y1 );
+os1.y1 = band118.rbj_tdf2( os1.y1 );
+os1.y1 = band119.rbj_tdf2( os1.y1 );
+os1.y1 = band120.rbj_tdf2( os1.y1 );
+os1.y1 = band121.rbj_tdf2( os1.y1 );
+os1.y1 = band122.rbj_tdf2( os1.y1 );
+os1.y1 = band123.rbj_tdf2( os1.y1 );
+os1.y1 = band124.rbj_tdf2( os1.y1 );
+os1.y1 = band125.rbj_tdf2( os1.y1 );
+os1.y1 = band126.rbj_tdf2( os1.y1 );
+os1.y1 = band127.rbj_tdf2( os1.y1 );
+os1.y1 = band128.rbj_tdf2( os1.y1 );
+os1.y1 = band129.rbj_tdf2( os1.y1 );
+os1.y1 = band130.rbj_tdf2( os1.y1 );
+
+os1.y0 = band100.rbj_tdf2( os1.y0 );
+os1.y0 = band101.rbj_tdf2( os1.y0 );
+os1.y0 = band102.rbj_tdf2( os1.y0 );
+os1.y0 = band103.rbj_tdf2( os1.y0 );
+os1.y0 = band104.rbj_tdf2( os1.y0 );
+os1.y0 = band105.rbj_tdf2( os1.y0 );
+os1.y0 = band106.rbj_tdf2( os1.y0 );
+os1.y0 = band107.rbj_tdf2( os1.y0 );
+os1.y0 = band108.rbj_tdf2( os1.y0 );
+os1.y0 = band109.rbj_tdf2( os1.y0 );
+os1.y0 = band110.rbj_tdf2( os1.y0 );
+os1.y0 = band111.rbj_tdf2( os1.y0 );
+os1.y0 = band112.rbj_tdf2( os1.y0 );
+os1.y0 = band113.rbj_tdf2( os1.y0 );
+os1.y0 = band114.rbj_tdf2( os1.y0 );
+os1.y0 = band115.rbj_tdf2( os1.y0 );
+os1.y0 = band116.rbj_tdf2( os1.y0 );
+os1.y0 = band117.rbj_tdf2( os1.y0 );
+os1.y0 = band118.rbj_tdf2( os1.y0 );
+os1.y0 = band119.rbj_tdf2( os1.y0 );
+os1.y0 = band120.rbj_tdf2( os1.y0 );
+os1.y0 = band121.rbj_tdf2( os1.y0 );
+os1.y0 = band122.rbj_tdf2( os1.y0 );
+os1.y0 = band123.rbj_tdf2( os1.y0 );
+os1.y0 = band124.rbj_tdf2( os1.y0 );
+os1.y0 = band125.rbj_tdf2( os1.y0 );
+os1.y0 = band126.rbj_tdf2( os1.y0 );
+os1.y0 = band127.rbj_tdf2( os1.y0 );
+os1.y0 = band128.rbj_tdf2( os1.y0 );
+os1.y0 = band129.rbj_tdf2( os1.y0 );
+os1.y0 = band130.rbj_tdf2( os1.y0 );
+
+spl0 = os0.os_down2();
+spl1 = os1.os_down2();
+
+@gfx 1200 350
+  
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("31 Band EQ", "processing | equalizer | eq | analog | console");
+
+	   ui_split_leftratio(0.95);                    
+	   control_group("");
+		   ui_split_leftratio(1/31);
+			  ui_automate(slider10, labelled_slider(slider10,0, -15, 15, 0, "20", slider10, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider11, labelled_slider(slider11,0, -15, 15, 0, "25", slider11, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider12, labelled_slider(slider12,0, -15, 15, 0, "31.5", slider12, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider13, labelled_slider(slider13,0, -15, 15, 0, "40", slider13, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider14, labelled_slider(slider14,0, -15, 15, 0, "50", slider14, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider15, labelled_slider(slider15,0, -15, 15, 0, "63", slider15, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider16, labelled_slider(slider16,0, -15, 15, 0, "80", slider16, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider17, labelled_slider(slider17,0, -15, 15, 0, "100", slider17, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider18, labelled_slider(slider18,0, -15, 15, 0, "125", slider18, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider19, labelled_slider(slider19,0, -15, 15, 0, "160", slider19, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider20, labelled_slider(slider20,0, -15, 15, 0, "200", slider20, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider21, labelled_slider(slider21,0, -15, 15, 0, "250", slider21, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider22, labelled_slider(slider22,0, -15, 15, 0, "315", slider22, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider23, labelled_slider(slider23,0, -15, 15, 0, "400", slider23, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider24, labelled_slider(slider24,0, -15, 15, 0, "500", slider24, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider25, labelled_slider(slider25,0, -15, 15, 0, "630", slider25, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider26, labelled_slider(slider26,0, -15, 15, 0, "800", slider26, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider27, labelled_slider(slider27,0, -15, 15, 0, "1k", slider27, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider28, labelled_slider(slider28,0, -15, 15, 0, "1.25k", slider28, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider29, labelled_slider(slider29,0, -15, 15, 0, "1.6k", slider29, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider30, labelled_slider(slider30,0, -15, 15, 0, "2k", slider30, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider31, labelled_slider(slider31,0, -15, 15, 0, "2.5k", slider31, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider32, labelled_slider(slider32,0, -15, 15, 0, "3.15k", slider32, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider33, labelled_slider(slider33,0, -15, 15, 0, "4k", slider33, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider34, labelled_slider(slider34,0, -15, 15, 0, "5k", slider34, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider35, labelled_slider(slider35,0, -15, 15, 0, "6.3k", slider35, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider36, labelled_slider(slider36,0, -15, 15, 0, "8k", slider36, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider37, labelled_slider(slider37,0, -15, 15, 0, "10k", slider37, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider38, labelled_slider(slider38,0, -15, 15, 0, "12.5k", slider38, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider39, labelled_slider(slider39,0, -15, 15, 0, "16k", slider39, "%.1f", 170,25,12,14));
+		   ui_split_next();
+			  ui_automate(slider40, labelled_slider(slider40,0, -15, 15, 0, "20k", slider40, "%.1f", 170,25,12,14));
+		   ui_pop();
+	ui_pop();
+	
+	control_group("");
+	ui_split_topratio(.3);
+		ui_automate(slider5, labelled_dial(slider5,0, 0, 6, 0, "hp", slider5, slider5 < 1 ? "off" : slider5 < 2 ? "25 Hz" : slider5 < 3 ? "50 Hz" : slider5 < 4 ? "75 Hz" : slider5 < 5 ? "100 Hz" : slider5 < 6 ? "125 Hz" : "150 Hz", 30,30,12));
+	ui_pop();
+		ui_automate(slider1, labelled_slider(slider1,0, -15, 15, 0, "gain", slider1, "%.1f dB", 120,20,14,14));
+	ui_pop(); 
+	   
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 18, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("author: sault
+  
+v 0.9
+IMPORTANT: requires rbj_filter.jsfx-inc (thank you Tale)
+hardcoded to 2x to keep higher frequencies from being too cramped
+
+editor: JPH
+-GUI (using Geraint Luff's API");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider41 = labelled_dial(slider41, 0, 0, 6, 0, "theme", slider41, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

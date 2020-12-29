@@ -1,0 +1,248 @@
+@init
+
+///////////////////////////ADDED FUNCTIONS JPH///////////////////////////////
+function labelled_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
+  ui_push();
+    ui_push_width(size);
+      value = control_dial_left(value, low, high, bias);
+    ui_pop();
+    ui_push_above(push);
+      ui_font(#face, textsize, 0, 0);
+      ui_text(label);
+    ui_pop();
+    ui_push_below(push);
+      ui_font(#face, textsize, 0, 0);
+      value = control_hidden_textnumber(value, formatvalue, format);
+    ui_pop();
+    ui_click() && ui_clickcount() == 2 ? (
+      value = default;
+    );
+  ui_pop();
+  value;
+);
+
+function headless_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
+  ui_push();
+    ui_align(-1,0.2);
+    ui_push_width(size);
+      value = control_dial_left(value, low, high, bias);
+    ui_pop();
+    ui_push_below(push);
+      ui_font(#face, textsize, 0, 0);
+      value = control_hidden_textnumber(value, formatvalue, format);
+    ui_pop();
+    ui_click() && ui_clickcount() == 2 ? (
+      value = default;
+    );
+  ui_pop();
+  value;
+);
+
+function labelled_meter(value, low, high, bias, label, formatvalue, format, default) (
+  ui_push();
+    ui_align(-1,0.4);
+    ui_push_width(270);
+    ui_push_height(20);
+      value = control_slider_left(value, low, high, bias);
+    ui_pop();
+    ui_pop();
+    ui_push_width(270);
+        ui_split_leftratio(1/3);
+        uix_control_color_from_theme(151, 30);
+        ui_align(1,-1);
+          ui_text("|");
+      ui_split_next();
+            uix_control_color_from_theme(151, 30);
+        ui_align(1,-1);
+          ui_text("|");
+      ui_pop();
+    ui_pop();
+    ui_push_below(30);
+      value = control_hidden_textnumber(value, formatvalue, format);
+    ui_pop();
+    ui_click() && ui_clickcount() == 2 ? (
+      value = default;
+    );
+  ui_pop();
+  value;
+);
+
+function bottomless_slider(value, default, low, high, bias, label, formatvalue, format, size, textsize) (
+  ui_align(-1,0.5);
+  ui_push();
+    ui_push_height(20);
+    ui_push_width(size);
+      value = control_slider_left(value, low, high, bias);
+    ui_pop();ui_pop();
+        uix_control_color_from_theme(151, 30);
+      ui_font(#face, textsize, 0, 0);
+      ui_text(label);
+    ui_click() && ui_clickcount() == 2 ? (
+      value = default;
+    );
+  ui_pop();
+  value;
+);
+
+function labelled_switch(value, label0, label1) (
+       ui_push_height(15);
+       ui_align(.9,1);
+              ui_push_width(30);
+                     value = control_switch(value);
+              ui_pop();
+       ui_pop();
+       ui_font(#face, 10, 0, 0);
+       ui_align(0.3,-1);
+       value == 0 ? (
+                    ui_text(label0);
+       ) : (
+                    ui_text(label1);
+       );
+       value;
+);
+
+function multipleway_switch(sliddy, text, vali, size, textsize) (
+       ui_push_height(size);
+          ui_align(0.9,-1);
+              ui_push_width(size);
+                sliddy = control_radio(sliddy, vali);
+              ui_pop();
+      ui_pop();
+             ui_align(0,-1);
+             ui_font(#face, textsize, 0, 0);
+             ui_text(text);
+      sliddy;
+);
+
+function multipleway_switch_sp(sliddy, text, vali, size, textsize) (
+ui_align(-1,.7);
+    ui_push_height(size);
+              ui_push_width(size);
+                sliddy = control_radio(sliddy, vali);
+              ui_pop();
+      ui_pop();
+             //ui_align(0.5,0.3);
+             ui_color(0, 0, 0, 0.5);
+             ui_font(#face, textsize, 0, 0);
+             ui_text(text);
+      sliddy;
+);
+
+function oneway_switch(value, text, size, textsize) local(state) (
+  ui_click() ? (
+    value = !value;
+    uix_undo_point();
+  );
+
+   ui_push_height(size);
+      ui_align(0.9,-1);
+          ui_push_width(size);
+
+      control_background_inset();
+      control_finish_inset();
+
+      state = control_state();
+      value == !option_value ? (
+        ui_pad(2, 2);
+        control_background_enabled(state);
+        control_finish_enabled(state);
+      );
+      ui_pop();
+    ui_pop();
+        ui_align(0,-1);
+        ui_font(#face, textsize, 0, 0);
+        ui_text(text);
+  value;
+);
+
+function oneway_switch_mid(value, text, size, textsize) local(state) (
+  ui_click() ? (
+    value = !value;
+    uix_undo_point();
+  );
+
+   ui_push_height(size);
+      ui_align(0.9,-1);
+          ui_push_width(size);
+
+      control_background_inset();
+      control_finish_inset();
+
+      state = control_state();
+      value == !option_value ? (
+        ui_pad(2, 2);
+        control_background_enabled(state);
+        control_finish_enabled(state);
+      );
+      ui_pop();
+    ui_pop();
+        ui_align(0.3,-1);
+        ui_font(#face, textsize, 0, 0);
+        ui_text(text);
+  value;
+);
+
+function oneway_switch_sp(value, text, size, textsize) local(state) (
+  ui_click() ? (
+    value = !value;
+    uix_undo_point();
+  );
+   ui_align(-1,1);
+   ui_push_height(size);
+          ui_push_width(size);
+
+      control_background_inset();
+      control_finish_inset();
+
+      state = control_state();
+      value == !option_value ? (
+        ui_pad(2, 2);
+        control_background_enabled(state);
+        control_finish_enabled(state);
+      );
+      ui_pop();
+    ui_pop();
+  value;
+);
+
+function labelled_slider(value, default, low, high, bias, label, displayformat, format, height, width, textsize1, textsize2) (
+    ui_push();
+        ui_push_height(height);
+            ui_push_width(width);
+                value = control_slider_y(value, low, high, bias);
+            ui_pop();ui_pop();
+        ui_push_above(130);
+                ui_font(#face, textsize1, 0, 0);
+                ui_text(label);
+            ui_pop();
+        ui_push_below(130);
+                ui_font(#face, textsize2, 0, 0);
+                value = control_hidden_textnumber(value, displayformat, format);
+            ui_pop();
+        ui_click() && ui_clickcount() == 2 ? (
+            value = default;
+        );
+  ui_pop();
+  value;
+);
+
+function title_desc (text1, text2) (
+control_group("");
+    ui_split_topratio(3/20);
+        ui_split_leftratio(1/3);
+                ui_text(text2);
+            ui_split_next();
+                ui_font(#face, 20, 1, 0);
+                ui_text(text1);
+            ui_split_next();
+                ui_split_rightratio(0.23);
+                    ui_push_height(22);
+                        ui_push_width(35);
+                        control_button("→") ? (
+                        ui_screen_open("opts"););
+                        ui_pop();
+                    ui_pop();
+                ui_pop();
+            ui_pop();
+    ui_pop();
+);

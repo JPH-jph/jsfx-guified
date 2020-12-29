@@ -1,0 +1,320 @@
+// (C) 2006, Michael Gruhn.
+
+// NO WARRANTY IS GRANTED. THIS PLUG-IN IS PROVIDED ON AN "AS IS" BASIS, WITHOUT
+// WARRANTY OF ANY KIND. NO LIABILITY IS GRANTED, INCLUDING, BUT NOT LIMITED TO,
+// ANY DIRECT OR INDIRECT,  SPECIAL,  INCIDENTAL OR CONSEQUENTIAL DAMAGE ARISING
+// OUT OF  THE  USE  OR INABILITY  TO  USE  THIS PLUG-IN,  COMPUTER FAILTURE  OF
+// MALFUNCTION INCLUDED.  THE USE OF THE SOURCE CODE,  EITHER  PARTIALLY  OR  IN
+// TOTAL, IS ONLY GRANTED,  IF USED IN THE SENSE OF THE AUTHOR'S INTENTION,  AND
+// USED WITH ACKNOWLEDGEMENT OF THE AUTHOR. FURTHERMORE IS THIS PLUG-IN A  THIRD
+// PARTY CONTRIBUTION,  EVEN IF INCLUDED IN REAPER(TM),  COCKOS INCORPORATED  OR
+// ITS AFFILIATES HAVE NOTHING TO DO WITH IT.  LAST BUT NOT LEAST, BY USING THIS
+// PLUG-IN YOU RELINQUISH YOUR CLAIM TO SUE IT'S AUTHOR, AS WELL AS THE CLAIM TO
+// ENTRUST SOMEBODY ELSE WITH DOING SO.
+
+// Also Useable For None Digital Drums ;)
+
+desc:DDC - GUI
+desc:Digital Drum Compressor (DDC) [LOSER]
+//tags: dynamics compressor
+//author: LOSER
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+slider1:-20<-60,0,.1>-Threshold (dB)
+slider2:20<1,50,.1>-Ratio
+slider3:20<0.1,500,1>-Attack (ms)
+slider4:.5<0,500,.1>-Hold (ms)
+slider5:200<0.1,1000,1>-Release (ms)
+slider6:0<0,1000,1>-RMS Size (ms) 
+slider7:1<0,2,1{Feedforward,Feedback,Sidechain}>-Feed
+slider8:0<0,1,1{No,Yes}>-Auto Make-Up
+slider9:0<-120,60,1>-Output (dB)
+slider10:0,-Reduction (dB)
+slider11:1<0,1,1{Off,On}>-Limiter
+slider12:0<0,100,0.05>-Muffle (%)
+slider13:0<0,100,1>-HP (%)
+slider14:0<0,6,1>-Theme
+
+in_pin:left input
+in_pin:right input
+in_pin:sidechain left input
+in_pin:sidechain right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+gain = seekgain = 1;
+c_ampdB = 8.65617025;
+
+/////////////////////////////////////////
+//           @slider code              //
+needs_slider_update=1;
+function slider_update()
+(
+needs_slider_update=0;
+treshdB = min(slider1,-.1);
+tresh = exp(treshdB/c_ampdB);
+ratio_1 = ratio;
+ratio = max(slider2,0.0001);
+
+treshdB == -.1 || ratio_1 < .1  ? (gain = seekgain = 1; );
+
+attack = exp( -treshdB/max( slider3*srate/1000 , 0) / c_ampdB  ) ;
+hold = slider4/1000*srate;
+under_tresh = 0;
+release = exp( -treshdB/max( slider5*srate/1000 , 0) / c_ampdB ) ;
+
+rms_size_1 = rms_size;
+rms_size = min( max(slider6/1000*srate,1) , 1000000);
+rms_size_1 != rms_size ? (
+    rms_sqr_sum = rms_bpos = 0;
+    memset(0,0,rms_size);
+);
+
+feed = slider7;
+
+mode_make_up = ratio < .5 ? 1:slider8;
+
+rms_size == 1 ? (
+    volume = exp(slider9/c_ampdB) / (mode_make_up ? tresh+(1-tresh)/ratio : 1);
+):(
+    volume = exp(slider9/c_ampdB) / (mode_make_up ? tresh+(1-tresh)/ratio * 2.828427125 : 1);
+);
+
+//muffle
+slider12 > 0 ? (
+muffle = 20000-(slider12*100+9000);
+lp_cut = 2*$pi*muffle;
+lp_n = 1/(lp_cut+ 2*srate);
+lp_b1 = (2*srate - lp_cut)*lp_n;
+lp_a0 = lp_a1 = lp_cut*lp_n;
+);
+
+//simplele6dbfilter
+sx = 16+slider13*1.20103;
+cutoff = floor(exp(sx*log(1.059))*8.17742);
+
+//coeff
+cutoff = min(cutoff,20000);
+hp_cut = 2*$pi*cutoff;
+hp_n = 1/(hp_cut+ 3*srate);
+hp_b1 = (3*srate - hp_cut)*hp_n;
+hp_a0 = hp_cut*hp_n;
+
+seekgain = 1;
+
+slider14 < 1 ? (
+    file=0;
+) : slider14 < 2 ? (
+    file=1;
+) : slider14 < 3 ? (
+    file=2;
+) : slider14 < 5 ? (
+    file=3;
+) : slider14 < 6 ? (
+    file=4;
+) : slider14 < 7 ? (
+    file=5;
+);
+
+
+
+);
+//////////////////////////////////////
+
+@slider
+// ui:gfx function=custom_gfx_func, height=300
+
+//////////////////////////////////////
+@block
+needs_slider_update ? slider_update();
+//////////////////////////////////////
+
+@sample
+feed == 0 ? (maxsamples = max(abs(spl0),abs(spl1)); );
+feed == 1 ? (maxsamples = max(abs(spl0_out),abs(spl1_out)); );
+feed == 2 ? (maxsamples = max(abs(spl2),abs(spl3)); );
+
+rms_sqr_sum = max(rms_sqr_sum - rms_bpos[0],0) + (rms_bpos[0] = sqr(maxsamples));
+(rms_bpos+=1) >= rms_size ? rms_bpos=0;
+rms = sqrt(rms_sqr_sum/rms_size);
+
+rms > tresh ? (
+    hold ?
+    (
+        ratio > 1 ? (
+            seekgain = min( (tresh+(rms-tresh)/ratio)/rms ,seekgain );
+        ):(
+            seekgain = max( (tresh+(rms-tresh)/ratio)/rms ,seekgain );
+        );
+    ):(
+        seekgain = (tresh+(rms-tresh)/ratio)/rms;
+    );
+    under_tresh = 0;
+):(
+    (under_tresh+=1)>hold ? (seekgain = 1; );
+);
+
+
+gain > seekgain ? gain=max(gain/attack,seekgain):gain=min(gain*release,seekgain);
+
+
+spl0_out = (spl0 *= gain * volume) ;
+spl1_out = (spl1 *= gain * volume) ;
+
+//lp
+slider12 > 0 ? (
+  lp_in_l = spl0_out;
+  lp_output_l = lp_in_l*lp_a0 + lp_in_l*lp_a1 + lp_output_l*lp_b1;
+  
+  lp_in_r = spl1_out;
+  lp_output_r = lp_in_r*lp_a0 + lp_in_r*lp_a1 + lp_output_r*lp_b1;
+) : (
+  lp_output_l = spl0_out;
+  lp_output_r = spl1_out;
+);
+
+//simplelp6dbfilter
+slider13 > 0 ? (
+inl = lp_output_l;
+inr = lp_output_r;
+hp_inl = 2*inl*hp_a0 + hp_inl*hp_b1;
+hp_inr = 2*inr*hp_a0 + hp_inr*hp_b1;
+
+hp_outl = (inl-hp_inl);
+hp_outr = (inr-hp_inr);
+) : (
+  hp_outl = lp_output_l;
+  hp_outr = lp_output_r;
+);
+
+//limit
+slider11 == 1 ? (
+  outl = min(max(hp_outl,-0.98),0.98);
+  outr = min(max(hp_outr,-0.98),0.98);
+  spl0 = outl;
+  spl1 = outr;
+);
+
+slider10 = log(gain)*c_ampdB;
+sliderchange(512);
+
+@gfx 800 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Digital Drum Compressor", "dynamics | compressor");
+    
+        ui_split_leftratio(3/20);
+            ui_split_topratio(1/2);
+            control_group("mode");
+            ui_split_topratio(1/3);
+                      ui_automate(slider7, multipleway_switch(slider7, "forward    ", 0 , 15, 11));
+                ui_split_next();
+                      ui_automate(slider7, multipleway_switch(slider7, "feedback    ", 1, 15, 11));  
+                ui_split_next();
+                      ui_automate(slider7, multipleway_switch(slider7, "sidechain    ", 2, 15, 11));  
+                ui_split_next();
+            ui_pop();
+        ui_pop();
+        
+        ui_split_topratio(1/6);
+        ui_pop();
+        
+        control_group("limit");
+            ui_split_topratio(1/2);
+                     ui_automate(slider8, oneway_switch(slider8, "auto gain    ", 15, 11));
+            ui_split_next();
+                    ui_automate(slider11, oneway_switch(slider11, "limit    ", 15, 11));
+        ui_pop();ui_pop();
+        
+        ui_split_leftratio(1/2);
+            ui_split_topratio(2/3);
+            control_group("");
+                    ui_split_leftratio(1/3);
+                        control_group("treshold");
+                        ui_automate(slider1, headless_dial(slider1, -20, -60, 0, 0, "", slider1, "%.1f dB", 50, 60, 14));
+                ui_split_next();
+                        control_group("ratio");
+                        ui_automate(slider2, headless_dial(slider2, 20, 1, 50, 0, "", slider2, "%.2f", 50, 60, 14));
+                ui_split_next();
+                        control_group("output");
+                        ui_automate(slider9, headless_dial(slider9, 0, -120, 60, 0, "", slider9, "%i dB", 50, 60, 14));
+                    ui_pop();
+                    
+                ui_split_next();
+                control_group("");
+                    ui_split_leftratio(1/2);
+                    control_group("");
+                        ui_automate(slider12, bottomless_slider(slider12, 0, 0, 100, 0, "muffle", slider12, "%.2f", 130, 14));
+                    ui_split_next();
+                    control_group("");
+                        ui_automate(slider13, bottomless_slider(slider13, 0, 0, 100, 0, "hp", slider13, "%.2f", 130, 14));
+                    ui_pop();
+            ui_pop(); 
+        ui_pop();
+        
+
+        
+        ui_split_topratio(1/2);
+        control_group("envelope");
+          ui_split_leftratio(1/4);
+              ui_automate(slider3, labelled_dial(slider3, 20, 0.1, 500, 0, "attack", slider3, "%i ms", 20, 20, 12));
+          ui_split_next();
+              ui_automate(slider4, labelled_dial(slider4, .5, 0, 500, 0, "hold", slider4, "%.1f ms", 20, 20, 12));
+          ui_split_next();
+              ui_automate(slider5, labelled_dial(slider5, 200, 0.1, 1000, 0, "release", slider5, "%i ms", 20, 20, 12));
+          ui_split_next(); 
+              ui_automate(slider6, labelled_dial(slider6, 0, 0, 1000, 0, "rms", slider6, "%i ms", 20, 20, 12));
+          ui_pop();
+          
+        ui_split_next();
+        control_group("meter");
+            ui_automate(slider10, labelled_meter(slider10, 0, -30, 0, "output", slider10, "%.1f dB", 0));
+        ui_pop();
+ 
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 15, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("author: LOSER
+Also Useable For None Digital Drums ;)
+
+editor: JPH
+-GUI (using Geraint Luff's API)
+-added limiter
+-added muffle
+-added hp filter");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider14 = labelled_dial(slider14, 0, 0, 6, 0, "theme", slider14, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;
