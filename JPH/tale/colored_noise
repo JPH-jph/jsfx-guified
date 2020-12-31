@@ -37,9 +37,9 @@ in_pin:Right
 out_pin:Left
 out_pin:Right
 
-import noise.jsfx-inc
-import rc_filter.jsfx-inc
-import zdf_filter.jsfx-inc
+import /inc/noise.jsfx-inc
+import /inc/rc_filter.jsfx-inc
+import /inc/zdf_filter.jsfx-inc
 
 @init
 ///////////////////////
@@ -143,7 +143,7 @@ slider14 < 1 ? (
 //////////////////////////////////////
 
 @slider
-// ui:gfx function=custom_gfx_func, height=300
+needs_slider_update=1;
 
 //////////////////////////////////////
 @block
@@ -154,45 +154,48 @@ needs_slider_update ? slider_update();
 @sample
 
 color == 0 ? (
-  left = rng0.lcg_brown();
-  stereo ? right = rng1.lcg_brown();
+  xleft = rng0.lcg_brown();
+  stereo ? xright = rng1.lcg_brown();
 ) :
 
 color == 1 ? (
-  left = rng0.lcg_pink();
-  stereo ? right = rng1.lcg_pink();
+  xleft = rng0.lcg_pink();
+  stereo ? xright = rng1.lcg_pink();
 ) :
 
 color == 3 ? (
-  left = rng0.lcg_blue();
-  stereo ? right = rng1.lcg_blue();
+  xleft = rng0.lcg_blue();
+  stereo ? xright = rng1.lcg_blue();
 ) :
 
 color == 4 ? (
-  left = rng0.lcg_violet();
-  stereo ? right = rng1.lcg_violet();
+  xleft = rng0.lcg_violet();
+  stereo ? xright = rng1.lcg_violet();
 ) :
 
 color == 5 ? (
-  left = rng0.lcg_grey();
-  stereo ? right = rng1.lcg_grey();
+  xleft = rng0.lcg_grey();
+  stereo ? xright = rng1.lcg_grey();
 ) :
 
 /* color == 2 ? */ (
-  left = rng0.lcg_black();
-  stereo ? right = rng1.lcg_black();
+  xleft = rng0.lcg_black();
+  stereo ? xright = rng1.lcg_black();
 );
 
-left *= gain;
-stereo ? right *= gain : right = left;
+xleft *= gain;
+stereo ? xright *= gain : xright = xleft;
 
 filter ? (
-  left = zdf0.zdf_svf(left);
-  right = stereo ? zdf1.zdf_svf(right) : left;
+  xleft = zdf0.zdf_svf(xleft);
+  xright = stereo ? zdf1.zdf_svf(xright) : xleft;
 );
 
-spl0 = dry.smooth() * spl0 + wet.smooth() * left;
-spl1 = dry.smooth * spl1 + wet.smooth * right;
+spl0 = dry.smooth() * spl0 + wet.smooth() * xleft;
+spl1 = dry.smooth * spl1 + wet.smooth * xright;
+
+spl0 = min(max(spl0,-0.98),0.98);
+spl1 = min(max(spl1,-0.98),0.98);
 
 @gfx 700 250
 
@@ -238,20 +241,15 @@ title_desc("Colored noise generator", "generator | synthesis");
                 
                 ui_split_leftratio(0.6);
                     ui_split_topratio(1/2);
-                        uix_control_color_from_theme(120, 30);
-                        ui_fill();
-                        uix_control_color_from_theme(151, 30);
-                        ui_border();
-                        uix_control_color_from_theme(151, 30);
                         
                         slider6 == 1 ? (
-                        draw_lp(slider7,slider8, 35000, 16);
+                        draw_lp(slider7, 24, slider8, 20, 20000, .1, 8);
                         ) : slider6 == 2 ? (
-                        draw_bp(slider7,slider8, 33000, 16);
+                        draw_bp(slider7, 24, slider8, 20, 20000, .1, 8);
                         ) : slider6 == 3 ? (
-                        draw_hp(slider7,slider8, 33000, 16);
+                        draw_hp(slider7, 24, slider8, 20, 20000, .1, 8);
                         ) : slider6 == 4 ? (
-                        draw_notch(slider7,slider8, 50000, 16);
+                        draw_notch2(slider7, 24, slider8, 20, 20000, .1, 8);
                         );
                         
                     ui_split_next();

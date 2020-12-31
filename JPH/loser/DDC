@@ -142,7 +142,7 @@ slider14 < 1 ? (
 //////////////////////////////////////
 
 @slider
-// ui:gfx function=custom_gfx_func, height=300
+needs_slider_update=1; 
 
 //////////////////////////////////////
 @block

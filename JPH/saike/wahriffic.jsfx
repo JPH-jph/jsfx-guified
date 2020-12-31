@@ -147,6 +147,7 @@ slider41 < 1 ? (
 //////////////////////////////////////
 
 @slider
+needs_slider_update=1;
 
 @block
 needs_slider_update ? slider_update();

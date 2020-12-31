@@ -101,6 +101,23 @@ function labelled_switch(value, label0, label1) (
        value;
 );
 
+function labelled_switch_mid(value, label0, label1) (
+       ui_push_height(15);
+       ui_align(.75,1);
+              ui_push_width(30);
+                     value = control_switch(value);
+              ui_pop();
+       ui_pop();
+       ui_font(#face, 10, 0, 0);
+       ui_align(0.25,-1);
+       value == 0 ? (
+                    ui_text(label0);
+       ) : (
+                    ui_text(label1);
+       );
+       value;
+);
+
 function multipleway_switch(sliddy, text, vali, size, textsize) (
        ui_push_height(size);
           ui_align(0.9,-1);
@@ -109,6 +126,19 @@ function multipleway_switch(sliddy, text, vali, size, textsize) (
               ui_pop();
       ui_pop();
              ui_align(0,-1);
+             ui_font(#face, textsize, 0, 0);
+             ui_text(text);
+      sliddy;
+);
+
+function multipleway_switch_mid(sliddy, text, vali, size, textsize) (
+       ui_push_height(size);
+          ui_align(0.9,-1);
+              ui_push_width(size);
+                sliddy = control_radio(sliddy, vali);
+              ui_pop();
+      ui_pop();
+             ui_align(0.5,-1);
              ui_font(#face, textsize, 0, 0);
              ui_text(text);
       sliddy;
@@ -247,126 +277,469 @@ control_group("");
     ui_pop();
 );
 
-function draw_lp(freq, q, maxfreq, maxq)(
-xleft=ui_left();
-xright=ui_right();
-xbottom=ui_bottom();
-xheight=ui_height();
-xwidth=ui_width();
-
-cutlev=freq/maxfreq;
-reslev=q/maxq;
-
-xmin = xleft+20;
-xrng = xright;
-xrng2 = xrng/2;
-xmax = xmin+xrng;
-
-ymin=xheight/2;
-yrng = 80;
-yrng2 = yrng/2;
-yrng4 = yrng/4;
-ymid = ymin+(yrng/2);
-ymax = ymin+yrng;
-
-gfx_a = 1;
-gfx_x = xleft;
-gfx_y = ymid;
-gfx_lineto(xmin+((cutlev)*xrng2-reslev*yrng4),ymid);
-gfx_lineto(xmin+((cutlev)*xrng2),ymid-reslev*yrng2);
-gfx_lineto(xmin+((cutlev)*xrng2)+yrng4+reslev*yrng4,ymax);
-gfx_lineto(xrng,ymax);
+function normalize_range(slider, newmin, newmax, oldmin, oldmax)(
+value = (newmax - newmin) / (oldmax - oldmin)*(slider - oldmax) + newmax;
 );
 
-function draw_hp(freq, q, maxfreq, maxq)(
-xleft=ui_left();
-xright=ui_right();
-xbottom=ui_bottom();
-xheight=ui_height();
-xwidth=ui_width();
+function draw_hp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
 
-cutlev=freq/maxfreq;
-reslev=q/maxq;
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
 
-xmin = xleft+40;
-xrng = xright;
-xrng2 = xrng/2.3;
-xmax = xmin+xrng;
+//draw
+    gfx_x=right; gfx_y=height;
 
-ymin=xheight/2;
-yrng = 80;
-yrng2 = yrng/2;
-yrng4 = yrng/4;
-ymid = ymin+(yrng/2);
-ymax = ymin+yrng;
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = (1/dbs)*1000;
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    
+    line1x=left+freqscale;
+    line1y=height-resscale;
+    line2x=left+freqscale-dbscale;
+    
+    line2x < left ? ( //limit left side
+        line2x = left;
+    );
+    
+    line1x+resscale > right ? ( //limit right side
+    gfx_lineto(right,height);
+    ) : gfx_lineto(line1x+resscale,height);
 
-gfx_a = 1;
-gfx_x = xleft;
-gfx_y = ymax;
-gfx_lineto(xmin-reslev*yrng4-yrng4+((cutlev)*xrng2),ymax);
-gfx_lineto(xmin+((cutlev)*xrng2),ymid-reslev*yrng2);
-gfx_lineto(xmin+((cutlev)*xrng2+reslev*yrng4),ymid);
-gfx_lineto(xrng,ymid);
+    gfx_lineto(line1x,line1y);
+    gfx_lineto(line2x,bottom);
 );
 
-function draw_bp(freq, q, maxfreq, maxq)(
-xleft=ui_left();
-xright=ui_right();
-xbottom=ui_bottom();
-xheight=ui_height();
-xwidth=ui_width();
+function draw_lp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
 
-cutlev=freq/maxfreq;
-reslev=q/maxq;
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
 
-xmin = xleft;
-xrng = xright;
-xrng2 = xrng/2;
-xmax = xmin+xrng;
+//draw
+    gfx_x=left; gfx_y=height;
 
-ymin=xheight/2;
-yrng = 80;
-yrng2 = yrng/2;
-yrng4 = yrng/4;
-ymid = ymin+(yrng/2);
-ymax = ymin+yrng;
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = (1/dbs)*1000;
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    
+    line1x=left+freqscale;
+    line1y=height-resscale;
+    line2x=left+freqscale+dbscale;
+    
+    line2x > right ? ( //limit left side
+        line2x = right;
+    );
+    
+    line1x-resscale < left ? ( //limit right side
+    gfx_lineto(left,height);
+    ) : gfx_lineto(line1x-resscale,height);
 
-gfx_a = 1;
-gfx_x = xleft;
-gfx_y = ymax;
-gfx_lineto(xmin+((cutlev)*xrng2),ymax+((cutlev)));
-gfx_lineto(xmin+20+((cutlev)*xrng2),ymax-reslev*yrng);
-gfx_lineto(xmin+40+((cutlev)*xrng2),ymax);
-gfx_lineto(xrng,ymax);
+    gfx_lineto(line1x,line1y);
+    gfx_lineto(line2x,bottom);
 );
 
-function draw_notch(freq, q, maxfreq, maxq)(
-xleft=ui_left();
-xright=ui_right();
-xbottom=ui_bottom();
-xheight=ui_height();
-xwidth=ui_width();
+function draw_bp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
 
-cutlev=freq/maxfreq;
-reslev=q/maxq;
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
 
-xmin = xleft;
-xrng = xright;
-xrng2 = xrng/2;
-xmax = xmin+xrng;
+//draw
+    gfx_x=left; gfx_y=bottom;
 
-ymin=xheight/2;
-yrng = 80;
-yrng2 = yrng/2;
-yrng4 = yrng/4;
-ymid = ymin+(yrng/2);
-ymax = ymin+yrng;
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = (1/dbs)*1000;
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    
+    line1x=left+freqscale;
+    line1y=bottom-resscale*2;
+    line2x=right;
+    line3x=left+freqscale+resscale;
+    
+    line3x > right ? ( //limit left side
+        line3x = right;
+    );
+    
+    line1x-resscale < left ? ( //limit right side
+    gfx_lineto(left,bottom);
+    ) : gfx_lineto(line1x-resscale,bottom);
 
-gfx_a = 1;
-gfx_x = xleft;
-gfx_y = ymid;
-gfx_lineto(xmin+((cutlev)*xrng2),ymid+((cutlev)));
-gfx_lineto(xmin+20+((cutlev)*xrng2),ymid+reslev*yrng);
-gfx_lineto(xmin+40+((cutlev)*xrng2),ymid);
-gfx_lineto(xrng,ymid);
+    gfx_lineto(line1x,line1y);
+    gfx_lineto(line3x,bottom);
+    gfx_lineto(line2x,bottom);
+);
+
+function draw_bp2(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = (1/dbs)*1000;
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+
+    resscale = (20/rsl);
+    
+    line1x=left+freqscale;
+    line1y=height;
+    line2x=right;
+    line3x=left+freqscale+resscale;
+    line2y=bottom-rescale;
+    
+    line3x > right ? ( //limit left side
+        line3x = right;
+    );
+    
+    line1y < height ? (
+        line1y = height;
+    );
+    
+    line2y < height ? (
+        line2y = height;
+    );
+    
+    gfx_x=left; gfx_y=line2y;
+    resscale == 0 ? (
+    gfx_lineto(line1x,height);
+    gfx_lineto(right,bottom);
+        
+    ) : (
+    line1x-resscale < left ? ( //limit right side
+    gfx_lineto(left,line2y);
+    ) : gfx_lineto(line1x-resscale,line2y);
+    
+    gfx_lineto(line1x,line1y);
+    gfx_lineto(line3x,line2y);
+    gfx_lineto(line2x,line2y);)
+);
+
+function draw_notch(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    gfx_x=left; gfx_y=height;
+
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = (1/dbs)*1000;
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    
+    line1x=left+freqscale;
+    line1y=height+resscale*1.5;
+    line2x=right;
+    line3x=left+freqscale+resscale;
+    
+    line3x > right ? ( //limit left side
+        line3x = right;
+    );
+    
+    line1x-resscale < left ? ( //limit right side
+    gfx_lineto(left,height);
+    ) : gfx_lineto(line1x-resscale,height);
+
+    gfx_lineto(line1x,line1y);
+    gfx_lineto(line3x,height);
+    gfx_lineto(line2x,height);
+);
+
+function draw_notch2(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    gfx_x=left; gfx_y=height;
+
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = (1/dbs)*1000;
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    
+    rsl < 0.2 ? (
+        resscale = height/2;
+    ) : resscale = (height/rsl)/10;
+    
+    line1x=left+freqscale;
+    line1y=height+resscale;
+    
+    line1y > bottom ? (//limit bottom
+        line1y=bottom;
+    );
+    
+    line2x=right;
+    line3x=left+freqscale+resscale;
+    
+    line3x > right ? ( //limit left side
+        line3x = right;
+    );
+    
+    line1x-resscale < left ? ( //limit right side
+    gfx_lineto(left,height);
+    ) : gfx_lineto(line1x-resscale,height);
+    
+
+    gfx_lineto(line1x,line1y);
+     gfx_lineto(line3x,height);
+     gfx_lineto(line2x,height);
+);
+
+function draw_notch4(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (  
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    gfx_x=left; gfx_y=height;
+
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    dbsscale = normalize_range(dbs,height*.01,height*.3,dbsmin,dbsmax);
+    dbsscale = 1/dbsscale;
+    
+    line1x=left+freqscale-dbsscale*20;
+    line1y=height+resscale;
+    line2x=right;
+    line3x=left+freqscale+dbsscale*2;
+    line4x=left+freqscale+dbsscale*20;
+    
+    line3x > right ? ( //limit left side
+        line3x = right;
+    );
+    
+    line4x > right ? ( //limit left side
+        line4x = right;
+    );
+    
+    line1x < left ? ( //limit right side
+    gfx_lineto(left,height);
+    ) : gfx_lineto(line1x,height);
+
+    gfx_lineto(line3x,line1y);
+    gfx_lineto(line4x,height);
+    gfx_lineto(line2x,height);
+);
+
+function draw_allpass(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    gfx_x=left; gfx_y=height;
+
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = (1/dbs)*1000;
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    
+    line1x=left+freqscale;
+    line1y=height+resscale;
+    line2x=right;
+    line2y=height-resscale;
+    line3x=left+freqscale+resscale;
+    
+    line3x > right ? ( //limit left side
+        line3x = right;
+    );
+    
+    line1x-resscale < left ? ( //limit right side
+    gfx_lineto(left,height);
+    ) : gfx_lineto(line1x-resscale,height);
+
+    gfx_lineto(line1x,line2y);
+    gfx_lineto(line1x,line1y);
+    gfx_lineto(line3x,height);
+    gfx_lineto(line2x,height);
+);
+
+function draw_peak(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = normalize_range(dbs,height*.01,height*.3,dbsmin,dbsmax);
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmax, rslmin);
+    
+    dbs == 0 ? (
+        dbscale = 0;
+    );
+    
+    gfx_x=left; gfx_y=height;
+
+    line1x=left+freqscale;
+    line1y=height;
+    line2x=right;
+    line3x=left+freqscale+resscale*2;
+    
+    line3x > right ? ( //limit left side
+        line3x = right;
+    );
+    
+    line1x-resscale*2 < left ? ( //limit right side
+    gfx_lineto(left,height);
+    ) : gfx_lineto(line1x-resscale*2,height);
+
+    gfx_lineto(line1x,line1y-dbscale);
+    gfx_lineto(line3x,height);
+    gfx_lineto(line2x,height);
+);
+
+function draw_lsf(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    gfx_x=right; gfx_y=height;
+
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = normalize_range(dbs,height*.01,height*.3,dbsmin,dbsmax);
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    dbs == 0 ? (
+        dbscale = 0;
+    );
+    
+    line1x=left+freqscale;
+    line1y=height+dbscale;
+    
+    line1x+resscale > right ? ( //limit right side
+    gfx_lineto(right,height);
+    ) : gfx_lineto(line1x+resscale,height);
+    gfx_lineto(line1x,height-dbscale);
+    gfx_lineto(left,height-dbscale);
+
+
+);
+
+function draw_hsf(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (
+//colors
+uix_control_color_from_theme(120, 30);
+ui_fill();
+uix_control_color_from_theme(151, 30);
+ui_border();
+uix_control_color_from_theme(151, 30);    
+
+//bounds
+left=ui_left();
+right=ui_right();
+bottom=ui_bottom();
+height=ui_height();
+width=ui_width();
+
+//draw
+    gfx_x=left; gfx_y=height;
+
+    freqscale = normalize_range(fsl,width*.01,width*1,fslmin,fslmax);
+    dbscale = normalize_range(dbs,height*.01,height*.3,dbsmin,dbsmax);
+    resscale = normalize_range(rsl,height*.01,height*.3,rslmin,rslmax);
+    dbs == 0 ? (
+        dbscale = 0;
+    );
+    
+    line1x=left+freqscale;
+    line1y=height+dbscale;
+    
+  
+    line1x-resscale < left ? ( //limit right side
+    gfx_lineto(left,height);
+    ) : gfx_lineto(line1x-resscale,height);
+    
+    gfx_lineto(line1x,height-dbscale);
+    gfx_lineto(right,height-dbscale);
+
+
 );

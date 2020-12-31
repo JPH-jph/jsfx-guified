@@ -1,0 +1,293 @@
+desc: Filters - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+import /inc/apple12pole.jsfx-inc
+import /inc/cheby24db.jsfx-inc
+import /inc/moog24db.jsfx-inc
+import /inc/simplelp6db.jsfx-inc
+import /inc/rbj_filters.jsfx-inc
+import /inc/MS-20.jsfx-inc
+import /inc/rbj4notch-teej.jsfx-inc
+
+//liteon applefilter72db
+slider1:0<0,1,1{Stereo,Mono}>-Processing ----apple----
+slider2:0<0,6,1{Off,12 dB/oct (2-pole),24 dB/oct (4-pole),36 dB/oct (6-pole),48 dB/oct (8-pole),60 dB/oct (10-pole),72 dB/oct (12-pole)}>-HP Slope
+slider3:0<0,100,0.01>-HP Cutoff (Scale)
+slider4:0<-16,16,0.01>-HP Resonance (dB)
+slider5:0<0,6,1{Off,12 dB/oct (2-pole),24 dB/oct (4-pole),36 dB/oct (6-pole),48 dB/oct (8-pole),60 dB/oct (10-pole),72 dB/oct (12-pole)}>-LP Slope
+slider6:100<0,100,0.01>-LP Cutoff (Scale)
+slider7:0<-16,16,0.01>-LP Resonance (dB)
+
+slider8:0<-24,24,0.01>-Output (dB)
+
+//liteon cheby24db
+slider10:0<0,1,1{Stereo,Mono}>-Processing ----cheby----
+slider11:0<0,2,1{LP,HP,BP}>-Filter Type
+slider12:100<0,100,0.05>-Cutoff (Scale)
+slider13:0.3<0,0.9,0.0005>-Passband Ripple (Less/More)
+
+slider14:1<0,1,1{On,Off}>-Limiter
+
+//liteon moog24db
+slider20:0<0,1,1{Stereo,Mono}>-Processing ----moog----
+slider21:0<0,2,1{LP,HP,BP}>-Filter Type
+slider22:100<0,100,0.05>-Cutoff (Scale)
+slider23:0<0,0.85,0.001>-Resonance
+slider24:0<0,100,0.05>-Drive (%)
+slider25:0<0,1,1{Off,On}>-Oversample (x2)
+
+//liteon simplelp6db
+slider30:0<0,1,1{Stereo,Mono}>-Processing ----simple----
+slider31:0<0,1,1{LP,HP}>-Filter Type
+slider32:100<0,100,0.05>-Cutoff (Scale)
+
+//witti rbj_filters
+slider33:50<0,100,0.01>-Frequency (Scale) ----rbj----
+slider34:0.707<0,4,0.001>-Bandwidth
+slider35:0<-12,12,0.1>-Gain (dB)
+slider36:0<0,8,1{lpf (bw),hpf (bw),bpf (constant skirt gain) (bw),bpf2 (constant peak gain) (bw),notch (bw),all pass (bw),peak (bw;dB),lsf (bw;dB),hsf (bw;dB)}>-Filter type
+
+//saike ms-20
+slider37:4<-6,24,1>-Drive (dB) ----ms-20----
+slider38:0<-6,24,1>-Post Boost (dB)
+slider39:1<0,1,.0001>-Cutoff
+slider40:0<0,1,.0001>-Resonance
+slider41:0<0,2,{LP,BP,HP}>-Type
+slider42:1<0,1,1<{Off,On}>-Inertia
+slider43:0<0,1,1<{tanh,atan}>-Non-linearity integrator saturation (OTA)
+slider44:0<0,1,1<{clip,soft}>-Non-linearity diode clipper
+slider45:2<1,8,1>-Oversampling
+
+//notch teej
+slider47:0<0,10000,5>-Sweep ----notch4----
+slider48:2000<0,10000,5>-Notch 1
+slider49:4000<0,10000,5>-Notch 2
+slider51:6000<0,10000,5>-Notch 3
+slider52:8000<0,10000,5>-Notch 4
+slider53:-9<-12,0,.1>-Notch Cut
+slider54:8<1,12,.1>-Notch Q
+
+//switchers
+slider50:0<0,6,1>-Theme
+slider63:1<1,2,1>-Apple HP LP
+slider64:0<0,7,1>-Switch
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+slider64 == 2 ? (
+cheby24init();
+) : slider64 == 3 ? (
+moog24init();
+) : slider64 == 6 ? (
+ms20init();
+) : slider64 == 7 ? (
+notchinit();
+);
+
+needs_slider_update=1;
+function slider_update()
+(
+needs_slider_update=0;
+
+outgain = 10^(slider8/20);
+
+slider64 == 1 ? ( 
+apple12slider();
+) : slider64 == 2 ? (
+cheby24slider();
+) : slider64 == 3 ? (
+moog24slider();
+) : slider64 == 4 ? (
+simpleslider();
+) : slider64 == 5 ? (
+rbjslider();
+) : slider64 == 6 ? (
+ms20slider();
+) : slider64 == 7 ? (
+notchslider();
+);
+
+slider50 < 1 ? (
+    file=0;
+) : slider50 < 2 ? (
+    file=1;
+) : slider50 < 3 ? (
+    file=2;
+) : slider50 < 5 ? (
+    file=3;
+) : slider50 < 6 ? (
+    file=4;
+) : slider50 < 7 ? (
+    file=5;
+);
+
+);
+
+@slider
+needs_slider_update=1;
+// ui:gfx function=custom_gfx_func, height=300
+
+@block
+
+needs_slider_update ? slider_update();
+slider64 == 2 ? (
+cheby24block();
+) : slider64 == 3 ? (
+moog24block();
+) : slider64 == 6 ? (
+ms20block();
+);
+
+@sample
+slider64 == 0 ? (
+spl0 = spl0*outgain;
+spl1 = spl1*outgain;
+) : slider64 == 1 ? (
+apple12sample();
+) : slider64 == 2 ? (
+cheby24sample();
+) : slider64 == 3 ? (
+moog24sample();
+) : slider64 == 4 ? (
+simplesample();
+) : slider64 == 5 ? (
+rbjsample();
+) : slider64 == 6 ? (
+ms20sample();
+) : slider64 == 7 ? (
+notchsample();
+);
+
+slider14 == 1 ? (
+    spl0 = min(max(spl0,-0.98),0.98);
+    spl1 = min(max(spl1,-0.98),0.98);
+);
+
+
+@gfx 800 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Filters", "processing | filter");
+
+        ui_split_leftratio(.2);
+            control_group("");
+            ui_split_topratio(1/11);
+                ui_automate(slider64, multipleway_switch(slider64, "off", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "apple", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "cheby", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "moog", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "simple", 4, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "rbj", 5, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "ms-20", 6, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "notch4", 7, 20, 12));
+            ui_split_next();
+            ui_pop();
+            
+            ui_split_topratio(1/2);
+                ui_automate(slider14, labelled_switch_mid(slider14, "limit off", "limit on"));
+            ui_split_next();
+                slider64 == 1 ? (
+                ui_automate(slider1, labelled_switch_mid(slider1, "stereo", "mono"));
+                ) : slider64 == 2 ? (
+                ui_automate(slider10, labelled_switch_mid(slider10, "stereo", "mono"));
+                ) : slider64 == 3 ? (
+                ui_automate(slider20, labelled_switch_mid(slider20, "stereo", "mono"));
+                ) : slider64 == 4 ? (
+                ui_automate(slider30, labelled_switch_mid(slider30, "stereo", "mono"));
+                );
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.2);
+        control_group("");
+                
+        slider64 == 1 ? (//apple
+            apple12gfx();
+        ) : slider64 == 2 ? (
+            cheby24gfx();
+        ) : slider64 == 3 ? (
+            moog24gfx();
+        ) : slider64 == 4 ? (
+            simplegfx();
+        ) : slider64 == 5 ? (
+            rbjgfx();
+        ) : slider64 == 6 ? (
+            ms20gfx();
+        ) : slider64 == 7 ? (
+            notchgfx();
+        );
+        
+        ui_pop();ui_pop();
+        
+
+                //out
+                control_group("");
+                    ui_automate(slider8, labelled_dial(slider8, 0, -24, 24, 0, "out", slider8, "%i dB", 50,50,14));
+                ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 12, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX filters:
+    -apple = applefilter72db by Liteon
+    -cheby = cheby24db by Liteon
+    -moog = moog24db by Liteon
+    -simple = simplelp6db by Liteon
+    -rbj = rbj_filters by witti
+    -ms-20 = ms-20 by saike
+    -notch4 = rbj4notch by teej
+When changing between these, you have to stop/start playback for them to work
+(due to my quirky scripting). But that shouldn't be too much of a problem.
+
+editor: JPH
+-GUI (using Geraint Luff's API)
+note: the filter representation is not the real filter shape. But it may give you an idea.
+Additionally, the Hz values could be incorrect. Use your ears :)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider50 = labelled_dial(slider50, 0, 0, 6, 0, "theme", slider50, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;
+
