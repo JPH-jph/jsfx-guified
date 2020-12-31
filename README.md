@@ -41,7 +41,7 @@ Right now the collection includes:
 |tale|colored_noise|
 |unknown|graphdist-dyn|
 |jph|voice control|
-||filters (collection of filters by liteon, saike and witti|
+||filters (collection of filters by liteon, saike and witti)|
 
 ### Screenshots
 ![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/filters.png)
