@@ -32,6 +32,7 @@ Right now the collection includes:
 |remaincalm|paranoiamangler (bundled with loser's amplitudeModulator)|
 |sai'ke|pop rocks|
 ||wahriffic|
+||transience|
 |sault|31-band-eq|
 |stillwell|badbussmojo|
 ||chorus|
@@ -40,8 +41,10 @@ Right now the collection includes:
 |tale|colored_noise|
 |unknown|graphdist-dyn|
 |jph|voice control|
+||filters (collection of filters by liteon, saike and witti|
 
 ### Screenshots
-![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/consolidator.png)
-![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/eq.png)
-![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/mangler.png)
+![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/filters.png)
+![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/consolidator.png)
+![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/eq.png)
+![Screenshot#34](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/mangler.png)
