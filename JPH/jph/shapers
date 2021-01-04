@@ -1,0 +1,308 @@
+desc: Shapers - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+import shape_inc/eventhorizon.jsfx-inc
+import shape_inc/hard_clipper.jsfx-inc
+import shape_inc/saike_smooth.jsfx-inc
+import shape_inc/soft_clipper.jsfx-inc
+import shape_inc/clipper_soft_basic_2.jsfx-inc
+import shape_inc/waveshaper_2.jsfx-inc
+import shape_inc/waveshapermulti.jsfx-inc
+import shape_inc/waveShapingDstr.jsfx-inc
+import shape_inc/saike_never_odd_or_even.jsfx-inc
+import shape_inc/Tanh_Saturator_AA.jsfx-inc
+
+//eventhorizon
+slider1:0.0<-30.0,0.0,0.1>-Threshold (dB)    ---horizon---
+slider2:-0.1<-20.0,0.0,0.1>-Ceiling (dB)
+slider3:2.0<0,6.0,0.01>-Soft Clip (dB)
+slider4:10<3,20,0.1>-Soft Clip Ratio
+
+//hard_clipper
+slider5:dBCeil=0<-48, 0,0.01> -Ceiling dBfs    ---hard---
+slider6:dBGain=0<  0,48,0.01> -Boost dB
+slider7:ovs=0<0,1,{Off,On}> -Oversampling
+slider8:blocker=1<0,1,{Disabled,Enabled}> -DC Blocker
+
+//saike smooth
+slider9:current_gain=0<-6,24,1>-Gain (dB)    ---smooth---
+slider10:current_ceiling=0<-18,0,1>-Ceiling (dB)
+slider11:slew=0<0,1,.001>-Slew
+slider12:warmth=0<-12,12,.001>-Warmth (dB)
+
+//soft chokehold
+slider13:dBCeil2=0<-48, 0,0.01> -Ceiling dBfs    ---soft---
+slider14:dBGain2=0<  0,48,0.01> -Boost dBfs
+slider15:ovs2=1<0,4,{Off,2x,4x,8x,16x}> -Oversampling
+slider16:filter2=1<0,3,{Relaxed,Normal,Heavy,Insane}> -Filtering
+slider17:blocker2=1<0,0,{Disabled,Enabled}> -DC blocker
+slider18:hard2=0<0,1,{Disabled,Enabled}> -Hard clipping
+
+//soft witti
+slider19:0<-6,36,0.1>-Input (dB)    ---soft2---
+slider20:2.5<1,10,0.1>-Ratio (soft<>hard)
+
+slider21:0<0,100,1>-Boost (%)    ---witty---
+slider22:0<0,100,1>-Drive (%)
+slider23:12000<1000,12000,1>-LowPass (Hz)
+
+slider24:1<0,1,1{Stereo,Mono}>-Processing    ---multi---
+slider25:0<0,2,1{Type 1,Type 2,Type 3}>-Waveshaper
+slider26:0<0,100,0.05>-Drive (%)
+slider27:0<0,100,0.05>-Muffle (%)
+slider28:0<0,1,1{Off,On}>-Oversample (x2)
+
+slider29:0<0,100,.1>-Distortion (%)    ---waveshape---
+slider30:0<0,100,1>-HP (%)
+
+slider31:current_gain2=0<-6,24,1>-Gain (dB)    ---odd---
+slider32:current_ceiling2=0<-36,0,1>-Ceiling (dB)
+slider33:even2=0<0,1,.0001>-Even
+slider34:odd2=0<0,1,.0001>-Odd
+slider35:warmth2=0<-12,12,.001>-Warmth (dB)
+
+slider36:0<-6,24,1>-Gain (dB)    ---tanh---
+slider37:0<-18,0,1>-Ceiling (dB)
+slider38:1<0,2,1{No,Constant,Linear (BETA)}>-Continuous antialias mode
+slider39:0<0,1,1>-Fix DC?
+slider40:smooth_time=50<0,100,.001>-Inertia (ms)
+slider41:shelf=1<0,1,1>-Correct for HF loss
+slider42:func=0<0,3,1{tanh,clip,sin}>-Shaping function
+slider43:Oversampling=1<1,4,1>-Oversampling
+
+//switchers
+slider61:0<0,1,1{Off,On}>-Limit
+slider62:0<-12,12,.1>-Output
+slider63:0<0,6,1>-Theme
+slider64:0<0,9,1>-Switch
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+draw_wavescopeinit();
+
+function slider_update()
+(
+needs_slider_update=0;
+
+outgain = 10^(slider62/20);
+
+slider64 == 0 ? (
+eventhorizoninit();
+) : slider64 == 1 ? (
+hardinit();
+) : slider64 == 2 ? (
+smoothinit();
+) : slider64 == 3 ? (
+softinit();
+) : slider64 == 6 ? (
+multiinit();
+) : slider64 == 8 ? (
+oddinit();
+);
+
+slider64 == 0 ? ( 
+eventhorizonslider();
+) : slider64 == 1 ? (
+hardslider();
+) : slider64 == 2 ? (
+smoothslider();
+) : slider64 == 3 ? (
+softslider();
+) : slider64 == 4 ? (
+soft2slider();
+) : slider64 == 5 ? (
+wittislider();
+) : slider64 == 6 ? (
+multislider();
+) : slider64 == 7 ? (
+waveshapeslider();
+) : slider64 == 8 ? (
+oddslider();
+) : slider64 == 9 ? (
+tanhslider();
+);
+
+slider63 < 1 ? (
+    file=0;
+) : slider63 < 2 ? (
+    file=1;
+) : slider63 < 3 ? (
+    file=2;
+) : slider63 < 5 ? (
+    file=3;
+) : slider63 < 6 ? (
+    file=4;
+) : slider63 < 7 ? (
+    file=5;
+);
+
+);
+
+@slider
+needs_slider_update=1;
+
+@block
+
+slider64 == 9 ? (
+tanhblock();
+);
+needs_slider_update ? slider_update();
+
+@sample
+slider64 == 0 ? (
+eventhorizonsample();
+) : slider64 == 1 ? (
+hardsample();
+) : slider64 == 2 ? (
+smoothsample();
+) : slider64 == 3 ? (
+softsample();
+) : slider64 == 4 ? (
+soft2sample();
+) : slider64 == 5 ? (
+wittisample();
+) : slider64 == 6 ? (
+multisample();
+) : slider64 == 7 ? (
+waveshapesample();
+) : slider64 == 8 ? (
+oddsample();
+) : slider64 == 9 ? (
+tanhsample();
+);
+
+draw_wavescopesample();
+spl0*=outgain;
+spl1*=outgain;
+
+slider61 == 1 ? (
+    spl0 = min(max(spl0,-0.98),0.98);
+    spl1 = min(max(spl1,-0.98),0.98);
+);
+
+@gfx 800 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Shapers", "processing | clipper | waveshaper | saturation");
+
+        ui_split_leftratio(.2);
+            control_group("");
+            ui_split_topratio(1/11);
+                ui_automate(slider64, multipleway_switch(slider64, "horizon", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "hard", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "smooth", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "soft", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "soft2", 4, 20, 12));
+            ui_split_next();ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "witty", 5, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "multi", 6, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "waveshape", 7, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "odd", 8, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "tanh", 9, 20, 12));
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.8);
+        control_group("");
+                
+        slider64 == 0 ? (
+            eventhorizongfx();
+        ) :  slider64 == 1 ? (
+            hardgfx();
+        ) : slider64 == 2 ? (
+            smoothgfx();
+        ) : slider64 == 3 ? (
+            softgfx();
+        ) : slider64 == 4 ? (
+            soft2gfx();
+        ) : slider64 == 5 ? (
+            wittigfx();
+        ) : slider64 == 6 ? (
+            multigfx();
+        ) : slider64 == 7 ? (
+            waveshapegfx();
+        ) : slider64 == 8 ? (
+            oddgfx();
+        ) : slider64 == 9 ? (
+            tanhgfx();
+        );
+        
+        ui_pop();
+        
+
+                //out
+                control_group("");
+                ui_split_bottomratio(0.2);
+                    ui_automate(slider61, labelled_switch_mid(slider61, "", "limit"));
+                ui_pop();
+                    ui_automate(slider62, labelled_dial(slider62, 0, -24, 24, 0, "out", slider62, "%i dB", 50,50,14));
+                ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 12, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX clippers / waveshapers:
+    -horizon = eventhorizon by stillwell
+    -hard = hard clipper by chokehold
+    -smooth = saike_smooth by saike
+    -soft = soft_clipper by chokehold
+    -soft2 = clipper_soft_basic_2 by witti
+    
+    -witty = waveshaper_2 by witti
+    -multi = waveshaperMulti by liteon
+    -waveshape = waveShapingDstr by loser
+    -odd = never odd or even by saike
+    -tanh = tanh saturator by saike
+
+editor: JPH
+-GUI (using Geraint Luff's API)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider63 = labelled_dial(slider63, 0, 0, 6, 0, "theme", slider63, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;
+

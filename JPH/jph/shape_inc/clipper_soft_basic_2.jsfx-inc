@@ -1,0 +1,32 @@
+// basic softclipping 2
+// witti
+
+@init
+
+function soft2slider() (
+gain=10^(slider19/20);
+ratio=slider20;
+);
+
+function soft2sample() (
+in0=spl0*gain;
+in1=spl1*gain;
+
+out0=in0/pow(1+pow(abs(in0),ratio),1/ratio);
+out1=in1/pow(1+pow(abs(in1),ratio),1/ratio);
+
+spl0=out0;
+spl1=out1;
+);
+
+function soft2gfx() (
+    ui_split_leftratio(0.6);
+        ui_split_leftratio(1/2);
+            ui_automate(slider19, labelled_dial(slider19, 0, -6, 36, 0, "gain", slider19, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider20, labelled_dial(slider20, 2.5, 1, 10, 0, "       ratio\n(soft<>hard)", slider20, "%.1f", 50,50,12));
+        ui_pop();
+    ui_pop();
+    
+        draw_wavescope();
+);

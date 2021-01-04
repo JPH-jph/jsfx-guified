@@ -11,16 +11,18 @@ filename:3,../ui-lib/bitmap/theme-retro.png
 filename:4,../ui-lib/bitmap/theme-blue.png
 filename:5,../ui-lib/bitmap/theme-pattern.png
 //////////////////////////////////////////
-import /inc/apple12pole.jsfx-inc
-import /inc/cheby24db.jsfx-inc
-import /inc/moog24db.jsfx-inc
-import /inc/simplelp6db.jsfx-inc
-import /inc/rbj_filters.jsfx-inc
-import /inc/MS-20.jsfx-inc
-import /inc/rbj4notch-teej.jsfx-inc
+import /filters_inc/apple12pole.jsfx-inc
+import /filters_inc/cheby24db.jsfx-inc
+import /filters_inc/moog24db.jsfx-inc
+import /filters_inc/MS_filter.jsfx-inc
+import /filters_inc/rbj_filters.jsfx-inc
+import /filters_inc/MS-20.jsfx-inc
+import /filters_inc/rc_filter.jsfx-inc
+import /filters_inc/zdf_filter.jsfx-inc
+import /filters_inc/zoelzer_filters.jsfx-inc
 
 //liteon applefilter72db
-slider1:0<0,1,1{Stereo,Mono}>-Processing ----apple----
+slider1:0<0,1,1{Stereo,Mono}>-Processing         ----apple----
 slider2:0<0,6,1{Off,12 dB/oct (2-pole),24 dB/oct (4-pole),36 dB/oct (6-pole),48 dB/oct (8-pole),60 dB/oct (10-pole),72 dB/oct (12-pole)}>-HP Slope
 slider3:0<0,100,0.01>-HP Cutoff (Scale)
 slider4:0<-16,16,0.01>-HP Resonance (dB)
@@ -28,59 +30,67 @@ slider5:0<0,6,1{Off,12 dB/oct (2-pole),24 dB/oct (4-pole),36 dB/oct (6-pole),48 
 slider6:100<0,100,0.01>-LP Cutoff (Scale)
 slider7:0<-16,16,0.01>-LP Resonance (dB)
 
-slider8:0<-24,24,0.01>-Output (dB)
-
 //liteon cheby24db
-slider10:0<0,1,1{Stereo,Mono}>-Processing ----cheby----
-slider11:0<0,2,1{LP,HP,BP}>-Filter Type
-slider12:100<0,100,0.05>-Cutoff (Scale)
-slider13:0.3<0,0.9,0.0005>-Passband Ripple (Less/More)
-
-slider14:1<0,1,1{On,Off}>-Limiter
+slider8:0<0,1,1{Stereo,Mono}>-Processing         ----cheby----
+slider9:0<0,2,1{LP,HP,BP}>-Filter Type
+slider10:100<0,100,0.05>-Cutoff (Scale)
+slider11:0.3<0,0.9,0.0005>-Passband Ripple (Less/More)
 
 //liteon moog24db
-slider20:0<0,1,1{Stereo,Mono}>-Processing ----moog----
-slider21:0<0,2,1{LP,HP,BP}>-Filter Type
-slider22:100<0,100,0.05>-Cutoff (Scale)
-slider23:0<0,0.85,0.001>-Resonance
-slider24:0<0,100,0.05>-Drive (%)
-slider25:0<0,1,1{Off,On}>-Oversample (x2)
+slider12:0<0,1,1{Stereo,Mono}>-Processing         ----moog----
+slider13:0<0,2,1{LP,HP,BP}>-Filter Type
+slider14:100<0,100,0.05>-Cutoff (Scale)
+slider15:0<0,0.85,0.001>-Resonance
+slider16:0<0,100,0.05>-Drive (%)
+slider17:0<0,1,1{Off,On}>-Oversample (x2)
 
-//liteon simplelp6db
-slider30:0<0,1,1{Stereo,Mono}>-Processing ----simple----
-slider31:0<0,1,1{LP,HP}>-Filter Type
-slider32:100<0,100,0.05>-Cutoff (Scale)
+//witti msfilter
+slider18:50<0,100,0.1>-Filter (%)         ----mid side----
+slider19:0<0,7,1{lowpass,lowpass mono,lowpass mid,lowpass side,highpass,highpass mono,highpass mid,highpass side}>-Mode
 
 //witti rbj_filters
-slider33:50<0,100,0.01>-Frequency (Scale) ----rbj----
-slider34:0.707<0,4,0.001>-Bandwidth
-slider35:0<-12,12,0.1>-Gain (dB)
-slider36:0<0,8,1{lpf (bw),hpf (bw),bpf (constant skirt gain) (bw),bpf2 (constant peak gain) (bw),notch (bw),all pass (bw),peak (bw;dB),lsf (bw;dB),hsf (bw;dB)}>-Filter type
+slider20:50<0,100,0.01>-Frequency (Scale)         ----rbj----
+slider21:0.707<0,4,0.001>-Bandwidth
+slider22:0<-12,12,0.1>-Gain (dB)
+slider23:0<0,8,1{lpf (bw),hpf (bw),bpf (constant skirt gain) (bw),bpf2 (constant peak gain) (bw),notch (bw),all pass (bw),peak (bw;dB),lsf (bw;dB),hsf (bw;dB)}>-Filter type
 
 //saike ms-20
-slider37:4<-6,24,1>-Drive (dB) ----ms-20----
-slider38:0<-6,24,1>-Post Boost (dB)
-slider39:1<0,1,.0001>-Cutoff
-slider40:0<0,1,.0001>-Resonance
-slider41:0<0,2,{LP,BP,HP}>-Type
-slider42:1<0,1,1<{Off,On}>-Inertia
-slider43:0<0,1,1<{tanh,atan}>-Non-linearity integrator saturation (OTA)
-slider44:0<0,1,1<{clip,soft}>-Non-linearity diode clipper
-slider45:2<1,8,1>-Oversampling
+slider24:4<-6,24,1>-Drive (dB)         ----ms-20----
+slider25:0<-6,24,1>-Post Boost (dB)
+slider26:1<0,1,.0001>-Cutoff
+slider27:0<0,1,.0001>-Resonance
+slider28:0<0,2,{LP,BP,HP}>-Type
+slider29:1<0,1,1<{Off,On}>-Inertia
+slider30:0<0,1,1<{tanh,atan}>-Non-linearity integrator saturation (OTA)
+slider31:0<0,1,1<{clip,soft}>-Non-linearity diode clipper
+slider32:2<1,8,1>-Oversampling
 
-//notch teej
-slider47:0<0,10000,5>-Sweep ----notch4----
-slider48:2000<0,10000,5>-Notch 1
-slider49:4000<0,10000,5>-Notch 2
-slider51:6000<0,10000,5>-Notch 3
-slider52:8000<0,10000,5>-Notch 4
-slider53:-9<-12,0,.1>-Notch Cut
-slider54:8<1,12,.1>-Notch Q
+//rc tale
+slider33:0<0,4,1{Low-Pass,High-Pass,All-Pass,Notch,Band-Pass}>-Mode         ----rc----
+//slider34:1000<20,24000,1>-Freq (Hz)
+slider35:100<0,100,1>-Scale (%)
+slider36:2.0<0.0,6.0,0.01>-Bandwidth (oct)
+slider37:0<0,1,1{6 dB,12 dB}>-Slope (dB/oct)
+
+//zdf tale
+slider38:0<0,7,1{Low-Pass,High-Pass,Band-Pass,Notch,All-Pass,Low-Shelf,Band,High-Shelf}>-Mode         ----zdf----
+//slider39:1000<1,24000,1>-Freq (Hz)
+slider40:100<0,100,1>-Scale (%)
+slider41:0.0<-72.0,36.0,0.1>-Gain (dB)
+slider42:1.0<0.1,10.0,0.01>-Q
+
+//zoelzer
+slider43:50<0,100,0.01>-Frequency (Scale)         ----zoelzer----
+slider44:0.707<0.2,4,0.001>-Bandwidth
+slider45:0<-12,12,0.1>-Gain (dB)
+slider46:0<0,8,1{lpf (bw),hpf (bw),bpf (constant skirt gain) (bw),bpf2 (constant peak gain) (bw),notch (bw),all pass (bw),peak (bw;dB),lsf (bw;dB),hsf (bw;dB)}>-Filter type
 
 //switchers
-slider50:0<0,6,1>-Theme
+slider60:0<0,6,1>-Theme         ----gui----
+slider61:0<-24,24,0.01>-Output (dB)
+slider62:0<0,1,1{On,Off}>-Limiter
 slider63:1<1,2,1>-Apple HP LP
-slider64:0<0,7,1>-Switch
+slider64:0<0,9,1>-Switch
 
 in_pin:left input
 in_pin:right input
@@ -97,22 +107,25 @@ freemem = bufferpeak + bufferlength;
 freemem = ui_setup(freemem); // returns the first index it's not using
 ///////////////////////
 
-slider64 == 2 ? (
-cheby24init();
-) : slider64 == 3 ? (
-moog24init();
-) : slider64 == 6 ? (
-ms20init();
-) : slider64 == 7 ? (
-notchinit();
-);
-
-needs_slider_update=1;
 function slider_update()
 (
 needs_slider_update=0;
 
-outgain = 10^(slider8/20);
+outgain = 10^(slider61/20);
+
+slider64 == 2 ? (
+cheby24init();
+) : slider64 == 3 ? (
+moog24init();
+) : slider64 == 4 ? (
+msfilterinit();
+) : slider64 == 6 ? (
+ms20init();
+) : slider64 == 7 ? (
+rcinit();
+) : slider64 == 8 ? (
+zdfinit();
+);
 
 slider64 == 1 ? ( 
 apple12slider();
@@ -121,26 +134,30 @@ cheby24slider();
 ) : slider64 == 3 ? (
 moog24slider();
 ) : slider64 == 4 ? (
-simpleslider();
+msfilterslider();
 ) : slider64 == 5 ? (
 rbjslider();
 ) : slider64 == 6 ? (
 ms20slider();
 ) : slider64 == 7 ? (
-notchslider();
+rcslider();
+) : slider64 == 8 ? (
+zdfslider();
+) : slider64 == 9 ? (
+zoelzslider();
 );
 
-slider50 < 1 ? (
+slider60 < 1 ? (
     file=0;
-) : slider50 < 2 ? (
+) : slider60 < 2 ? (
     file=1;
-) : slider50 < 3 ? (
+) : slider60 < 3 ? (
     file=2;
-) : slider50 < 5 ? (
+) : slider60 < 5 ? (
     file=3;
-) : slider50 < 6 ? (
+) : slider60 < 6 ? (
     file=4;
-) : slider50 < 7 ? (
+) : slider60 < 7 ? (
     file=5;
 );
 
@@ -157,6 +174,8 @@ slider64 == 2 ? (
 cheby24block();
 ) : slider64 == 3 ? (
 moog24block();
+) : slider64 == 4 ? (
+msfilterblock();
 ) : slider64 == 6 ? (
 ms20block();
 );
@@ -165,6 +184,7 @@ ms20block();
 slider64 == 0 ? (
 spl0 = spl0*outgain;
 spl1 = spl1*outgain;
+
 ) : slider64 == 1 ? (
 apple12sample();
 ) : slider64 == 2 ? (
@@ -172,16 +192,20 @@ cheby24sample();
 ) : slider64 == 3 ? (
 moog24sample();
 ) : slider64 == 4 ? (
-simplesample();
+msfiltersample();
 ) : slider64 == 5 ? (
 rbjsample();
 ) : slider64 == 6 ? (
 ms20sample();
 ) : slider64 == 7 ? (
-notchsample();
+rcsample();
+) : slider64 == 8 ? (
+zdfsample();
+) : slider64 == 9 ? (
+zoelzsample();
 );
 
-slider14 == 1 ? (
+slider62 == 1 ? (
     spl0 = min(max(spl0,-0.98),0.98);
     spl1 = min(max(spl1,-0.98),0.98);
 );
@@ -196,7 +220,7 @@ title_desc("Filters", "processing | filter");
 
         ui_split_leftratio(.2);
             control_group("");
-            ui_split_topratio(1/11);
+            ui_split_topratio(1/10);
                 ui_automate(slider64, multipleway_switch(slider64, "off", 0, 20, 12));
             ui_split_next();
                 ui_automate(slider64, multipleway_switch(slider64, "apple", 1, 20, 12));
@@ -205,29 +229,19 @@ title_desc("Filters", "processing | filter");
             ui_split_next();
                 ui_automate(slider64, multipleway_switch(slider64, "moog", 3, 20, 12));
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "simple", 4, 20, 12));
+                ui_automate(slider64, multipleway_switch(slider64, "m/s", 4, 20, 12));
             ui_split_next();
                 ui_automate(slider64, multipleway_switch(slider64, "rbj", 5, 20, 12));
             ui_split_next();
                 ui_automate(slider64, multipleway_switch(slider64, "ms-20", 6, 20, 12));
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "notch4", 7, 20, 12));
+                ui_automate(slider64, multipleway_switch(slider64, "rc", 7, 20, 12));
             ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "zdf", 8, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "zoelzer", 9, 20, 12));
             ui_pop();
             
-            ui_split_topratio(1/2);
-                ui_automate(slider14, labelled_switch_mid(slider14, "limit off", "limit on"));
-            ui_split_next();
-                slider64 == 1 ? (
-                ui_automate(slider1, labelled_switch_mid(slider1, "stereo", "mono"));
-                ) : slider64 == 2 ? (
-                ui_automate(slider10, labelled_switch_mid(slider10, "stereo", "mono"));
-                ) : slider64 == 3 ? (
-                ui_automate(slider20, labelled_switch_mid(slider20, "stereo", "mono"));
-                ) : slider64 == 4 ? (
-                ui_automate(slider30, labelled_switch_mid(slider30, "stereo", "mono"));
-                );
-            ui_pop();
         ui_pop();
         
         control_group("");
@@ -241,13 +255,17 @@ title_desc("Filters", "processing | filter");
         ) : slider64 == 3 ? (
             moog24gfx();
         ) : slider64 == 4 ? (
-            simplegfx();
+            msfiltergfx();
         ) : slider64 == 5 ? (
             rbjgfx();
         ) : slider64 == 6 ? (
             ms20gfx();
         ) : slider64 == 7 ? (
-            notchgfx();
+            rcgfx();
+        ) : slider64 == 8 ? (
+            zdfgfx();
+        ) : slider64 == 9 ? (
+            zoelzgfx();
         );
         
         ui_pop();ui_pop();
@@ -255,7 +273,20 @@ title_desc("Filters", "processing | filter");
 
                 //out
                 control_group("");
-                    ui_automate(slider8, labelled_dial(slider8, 0, -24, 24, 0, "out", slider8, "%i dB", 50,50,14));
+                ui_split_topratio(0.7);
+                    ui_automate(slider61, labelled_dial(slider61, 0, -24, 24, 0, "out", slider61, "%i dB", 50,50,14));
+                ui_pop();
+                ui_split_topratio(1/2);
+                    ui_automate(slider62, labelled_switch_mid(slider62, "limit off", "limit on"));
+                ui_split_next();
+                    slider64 == 1 ? (
+                    ui_automate(slider1, labelled_switch_mid(slider1, "stereo", "mono"));
+                    ) : slider64 == 2 ? (
+                    ui_automate(slider8, labelled_switch_mid(slider8, "stereo", "mono"));
+                    ) : slider64 == 3 ? (
+                    ui_automate(slider12, labelled_switch_mid(slider12, "stereo", "mono"));
+                    );
+                ui_pop();
                 ui_pop();
             
 ) : ui_screen() == "opts" ? (
@@ -270,21 +301,21 @@ title_desc("Filters", "processing | filter");
     -apple = applefilter72db by Liteon
     -cheby = cheby24db by Liteon
     -moog = moog24db by Liteon
-    -simple = simplelp6db by Liteon
+    -ms = MS_filter by witti
     -rbj = rbj_filters by witti
     -ms-20 = ms-20 by saike
-    -notch4 = rbj4notch by teej
-When changing between these, you have to stop/start playback for them to work
-(due to my quirky scripting). But that shouldn't be too much of a problem.
+    -rc = rc_filter by tale
+    -zdf = zdf_filter by tale
+    -zoelzer = zoelzer_filters by witti
 
 editor: JPH
 -GUI (using Geraint Luff's API)
-note: the filter representation is not the real filter shape. But it may give you an idea.
-Additionally, the Hz values could be incorrect. Use your ears :)");
+note: the filter representation is not the real filter shape. Just the first thing I came up with.
+Use your ears :)");
 ui_align(.5, -1);
 ui_split_rightratio(0.2);
     control_group("");
-    slider50 = labelled_dial(slider50, 0, 0, 6, 0, "theme", slider50, "%i", 50,50,14);
+    slider60 = labelled_dial(slider60, 0, 0, 6, 0, "theme", slider60, "%i", 50,50,14);
 ui_pop();
 
 ) : ui_system();

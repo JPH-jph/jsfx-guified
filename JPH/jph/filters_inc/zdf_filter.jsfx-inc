@@ -1,0 +1,227 @@
+//tags: filter
+//author: Tale
+// Copyright (C) 2017 Theo Niessink
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+// This effect filters the input signal using a 2nd-order (12 dB) zero-delay
+// feedback state variable filter.
+// You can select the cutoff/center frequency using both the linear
+// frequency slider (for typing exact values), and the logarithmic scale
+// slider (for automation).
+
+import /inc/zdf_filter2.jsfx-inc
+import /inc/rc_filter2.jsfx-inc
+
+@init
+
+function scale(x) ( 1/1200 + 1199/1200 * (exp(6*x) - 1) * /* 1/(exp(6) - 1) */ 0.0024849116568445855 );
+function gain(x) ( x <= -120 ? 0 : exp(/* log(10)/20 */ 0.11512925464970228 * x) );
+
+smooth.rc_set(0.0033);
+function smooth() ( smooth.lp = this.smooth; this.smooth = smooth.rc_lp(this); );
+
+function zdfinit() (
+r2.smooth = cl.smooth = 1;
+cb.smooth = ch.smooth = 0;
+
+dry.smooth = 0;
+wet.smooth = 1;
+
+min_fc = 1/60;
+);
+
+function zdfslider() (
+mode = min(max(0, slider38|0), 7);
+freq = max(24000 * scale(slider40 * 0.01), min_fc);
+gain = gain(slider41);
+q = max(slider42, 0.1);
+
+mode == 0 ? zdf0.zdf_lp(freq, q) :
+mode == 1 ? zdf0.zdf_hp(freq, q) :
+mode == 2 ? zdf0.zdf_bp(freq, q) :
+mode == 3 ? zdf0.zdf_bs(freq, q) :
+mode == 4 ? zdf0.zdf_ap(freq, q) :
+mode == 5 ? zdf0.zdf_ls(freq, q, gain) :
+mode == 6 ? zdf0.zdf_eq(freq, q, gain) :
+/* mode == 7 ? */ zdf0.zdf_hs(freq, q, gain);
+
+zdf1.g = zdf0.g;
+
+r2 = zdf0.r2;
+cl = zdf0.cl;
+cb = zdf0.cb;
+ch = zdf0.ch;
+
+dry = gain(-120);
+wet = gain(0);
+);
+
+function zdfsample() (
+zdf0.r2 = zdf1.r2 = r2.smooth();
+zdf1.h = zdf0._zdf_seth();
+
+zdf0.cl = zdf1.cl = cl.smooth();
+zdf0.cb = zdf1.cb = cb.smooth();
+zdf0.ch = zdf1.ch = ch.smooth();
+
+spl0 = dry.smooth() * spl0 + wet.smooth() * zdf0.zdf_svf(spl0) * outgain;
+spl1 = dry.smooth * spl1 + wet.smooth * zdf1.zdf_svf(spl1) * outgain;
+);
+
+function zdfgfx() (
+            ui_split_topratio(1/10);
+            ui_automate(slider38, multipleway_switch(slider38, "lp", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider38, multipleway_switch(slider38, "hp", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider38, multipleway_switch(slider38, "bp", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider38, multipleway_switch(slider38, "notch", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider38, multipleway_switch(slider38, "allpass", 4, 20, 12));
+            ui_split_next();
+                ui_automate(slider38, multipleway_switch(slider38, "lsf", 5, 20, 12));
+            ui_split_next();
+                ui_automate(slider38, multipleway_switch(slider38, "peak", 6, 20, 12));
+            ui_split_next();
+                ui_automate(slider38, multipleway_switch(slider38, "hsf", 7, 20, 12));
+            ui_split_next();ui_split_next();
+            ui_pop(); 
+            
+            
+            slider38 == 0 ? ( //lp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_lp(slider40, 12, slider42, 0, 100, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/2);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_pop();
+          
+          
+          ) : slider38 == 1 ? (//hp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_hp(slider40, 12, slider42, 0, 100, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/2);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_pop();
+                
+                
+          ) : slider38 == 2 ? (//bp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_bp(slider40, 12, slider42, 0, 100, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/2);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_pop();
+                
+          ) : slider38 == 3 ? (//notch
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_notch2(slider40, 12, slider42, 0, 100, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/2);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_pop();
+                
+          ) : slider38 == 4 ? (//allpass
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_allpass(slider40, 12, slider42, 0, 100, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/2);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_pop();
+                
+          ) : slider38 == 5 ? (//allpass
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_lsf(slider40, slider41, slider42, 0, 100, 0, 108, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/3);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider41, labelled_dial(slider41, 0, -72, 36, 0, "gain", slider41, "%.1f dB", 50,50,12));
+                ui_pop();
+                
+        ) : slider38 == 6 ? (//band
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_peak(slider40, slider41, slider42, 0, 100, 0, 108, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/3);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider41, labelled_dial(slider41, 0, -72, 36, 0, "gain", slider41, "%.1f dB", 50,50,12));
+                ui_pop();
+
+          ) : slider38 == 7 ? (//allpass
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+                draw_hsf(slider40, slider41, slider42, 0, 100, 0, 108, 0.1, 10);
+
+            
+            ui_split_next();
+                ui_split_leftratio(1/3);
+                    ui_automate(slider40, labelled_dial(slider40, 100, 0, 100, 0, "cutoff", 24000*scale(slider40 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider42, labelled_dial(slider42, 1, 0.1, 10, 0, "bandwidth", slider42, "%.1f", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider41, labelled_dial(slider41, 0, -72, 36, 0, "gain", slider41, "%.1f dB", 50,50,12));
+                ui_pop();
+        );
+);

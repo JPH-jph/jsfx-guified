@@ -1,7 +1,7 @@
 @init
 
 ///////////////////////////ADDED FUNCTIONS JPH///////////////////////////////
-function labelled_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
+function labelled_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) local (value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
   ui_push();
     ui_push_width(size);
       value = control_dial_left(value, low, high, bias);
@@ -21,7 +21,7 @@ function labelled_dial(value, default, low, high, bias, label, formatvalue, form
   value;
 );
 
-function headless_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
+function headless_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) local (value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
   ui_push();
     ui_align(-1,0.2);
     ui_push_width(size);
@@ -38,7 +38,7 @@ function headless_dial(value, default, low, high, bias, label, formatvalue, form
   value;
 );
 
-function labelled_meter(value, low, high, bias, label, formatvalue, format, default) (
+function labelled_meter(value, low, high, bias, label, formatvalue, format, default) local (value, low, high, bias, label, formatvalue, format, default) (
   ui_push();
     ui_align(-1,0.4);
     ui_push_width(270);
@@ -67,7 +67,33 @@ function labelled_meter(value, low, high, bias, label, formatvalue, format, defa
   value;
 );
 
-function bottomless_slider(value, default, low, high, bias, label, formatvalue, format, size, textsize) (
+function notlabelled_meter(value, low, high, bias, label, formatvalue, format, default) local (value, low, high, bias, label, formatvalue, format, default) (
+  ui_push();
+    ui_align(-1,0.98);
+    ui_push_width(270);
+        ui_push_height(20);
+                    value = control_slider_left(value, low, high, bias);
+        ui_pop();
+    ui_pop();
+    ui_push_width(270);
+        ui_split_leftratio(1/3);
+        uix_control_color_from_theme(151, 30);
+        ui_align(1,-1);
+          ui_text("|");
+      ui_split_next();
+            uix_control_color_from_theme(151, 30);
+        ui_align(1,-1);
+          ui_text("|");
+      ui_pop();
+    ui_pop();
+    ui_click() && ui_clickcount() == 2 ? (
+      value = default;
+    );
+  ui_pop();
+  value;
+);
+
+function bottomless_slider(value, default, low, high, bias, label, formatvalue, format, size, textsize) local (value, default, low, high, bias, label, formatvalue, format, size, textsize) (
   ui_align(-1,0.5);
   ui_push();
     ui_push_height(20);
@@ -84,7 +110,7 @@ function bottomless_slider(value, default, low, high, bias, label, formatvalue, 
   value;
 );
 
-function labelled_switch(value, label0, label1) (
+function labelled_switch(value, label0, label1) local (value, label0, label1) (
        ui_push_height(15);
        ui_align(.9,1);
               ui_push_width(30);
@@ -101,7 +127,7 @@ function labelled_switch(value, label0, label1) (
        value;
 );
 
-function labelled_switch_mid(value, label0, label1) (
+function labelled_switch_mid(value, label0, label1) local (value, label0, label1) (
        ui_push_height(15);
        ui_align(.75,1);
               ui_push_width(30);
@@ -118,7 +144,7 @@ function labelled_switch_mid(value, label0, label1) (
        value;
 );
 
-function multipleway_switch(sliddy, text, vali, size, textsize) (
+function multipleway_switch(sliddy, text, vali, size, textsize) local (sliddy, text, vali, size, textsize) (
        ui_push_height(size);
           ui_align(0.9,-1);
               ui_push_width(size);
@@ -131,7 +157,7 @@ function multipleway_switch(sliddy, text, vali, size, textsize) (
       sliddy;
 );
 
-function multipleway_switch_mid(sliddy, text, vali, size, textsize) (
+function multipleway_switch_mid(sliddy, text, vali, size, textsize) local (sliddy, text, vali, size, textsize) (
        ui_push_height(size);
           ui_align(0.9,-1);
               ui_push_width(size);
@@ -144,7 +170,7 @@ function multipleway_switch_mid(sliddy, text, vali, size, textsize) (
       sliddy;
 );
 
-function multipleway_switch_sp(sliddy, text, vali, size, textsize) (
+function multipleway_switch_sp(sliddy, text, vali, size, textsize) local (sliddy, text, vali, size, textsize) (
 ui_align(-1,.7);
     ui_push_height(size);
               ui_push_width(size);
@@ -158,7 +184,7 @@ ui_align(-1,.7);
       sliddy;
 );
 
-function oneway_switch(value, text, size, textsize) local(state) (
+function oneway_switch(value, text, size, textsize) local(state, value, text, size, textsize) (
   ui_click() ? (
     value = !value;
     uix_undo_point();
@@ -185,7 +211,7 @@ function oneway_switch(value, text, size, textsize) local(state) (
   value;
 );
 
-function oneway_switch_mid(value, text, size, textsize) local(state) (
+function oneway_switch_mid(value, text, size, textsize) local(state, value, text, size, textsize) (
   ui_click() ? (
     value = !value;
     uix_undo_point();
@@ -212,7 +238,35 @@ function oneway_switch_mid(value, text, size, textsize) local(state) (
   value;
 );
 
-function oneway_switch_sp(value, text, size, textsize) local(state) (
+function oneway_switch_midb(value, text, size, textsize) local(state, value, text, size, textsize) (
+  ui_click() ? (
+    value = !value;
+    uix_undo_point();
+  );
+
+   ui_push_height(size);
+      ui_align(0.5,0.5);
+          ui_push_width(size);
+
+      control_background_inset();
+      control_finish_inset();
+
+      state = control_state();
+      value == !option_value ? (
+        ui_pad(2, 2);
+        control_background_enabled(state);
+        control_finish_enabled(state);
+      );
+      ui_pop();
+    ui_pop();
+        ui_push_below(30);
+        ui_font(#face, textsize, 0, 0);
+        ui_text(text);
+    ui_pop();
+  value;
+);
+
+function oneway_switch_sp(value, text, size, textsize) local(state, value, text, size, textsize) (
   ui_click() ? (
     value = !value;
     uix_undo_point();
@@ -235,7 +289,7 @@ function oneway_switch_sp(value, text, size, textsize) local(state) (
   value;
 );
 
-function labelled_slider(value, default, low, high, bias, label, displayformat, format, height, width, textsize1, textsize2) (
+function labelled_slider(value, default, low, high, bias, label, displayformat, format, height, width, textsize1, textsize2) local (value, default, low, high, bias, label, displayformat, format, height, width, textsize1, textsize2) (
     ui_push();
         ui_push_height(height);
             ui_push_width(width);
@@ -256,7 +310,48 @@ function labelled_slider(value, default, low, high, bias, label, displayformat, 
   value;
 );
 
-function title_desc (text1, text2) (
+function control_selector2(value, text, next_value, prev_value) local(buttonwidth) (
+	ui_push_height(ui_texth() + 2*ui_padding_y());
+    ui_push_width(ui_width()-20);
+		control_background_inset();
+		buttonwidth = min(ui_height()/2, ui_width()/2);
+
+		ui_halign() <= 0.5 ? ui_split_left(buttonwidth) : ui_split_right(buttonwidth);
+			ui_color(255, 255, 255, 0.8);
+			ui_split_topratio(0.5);
+				next_value != value ? control_background_enabled() : control_background_disabled();
+				ui_text("↑");
+				next_value != value ? control_finish_enabled() : control_finish_disabled();
+				ui_click() ? (
+					value = next_value;
+					uix_undo_point(1);
+					ui_click_clear();
+				);
+			ui_split_next();
+				prev_value != value ? control_background_enabled() : control_background_disabled();
+				ui_text("↓");
+				prev_value != value ? control_finish_enabled() : control_finish_disabled();
+				ui_click() ? (
+					value = prev_value;
+					uix_undo_point(1);
+					ui_click_clear();
+				);
+			ui_pop();
+		ui_pop();
+
+		ui_push();
+			ui_padleft();
+			ui_padright();
+            ui_text(text);
+		ui_pop();
+
+		control_finish_inset();
+	ui_pop();
+    ui_pop();
+	value;
+);
+
+function title_desc (text1, text2) local (text1, text2) (
 control_group("");
     ui_split_topratio(3/20);
         ui_split_leftratio(1/3);
@@ -277,23 +372,23 @@ control_group("");
     ui_pop();
 );
 
-function normalize_range(slider, newmin, newmax, oldmin, oldmax)(
+function normalize_range(slider, newmin, newmax, oldmin, oldmax) local (slider, newmin, newmax, oldmin, oldmax)(
 value = (newmax - newmin) / (oldmax - oldmin)*(slider - oldmax) + newmax;
 );
 
-function draw_hp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+function draw_hp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
 uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+ 
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -317,21 +412,23 @@ width=ui_width();
 
     gfx_lineto(line1x,line1y);
     gfx_lineto(line2x,bottom);
+control_finish_technical();
+ui_border();  
 );
 
-function draw_lp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+function draw_lp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
 uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+  
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -355,21 +452,23 @@ width=ui_width();
 
     gfx_lineto(line1x,line1y);
     gfx_lineto(line2x,bottom);
+    
+control_finish_technical();
+ui_border();  
 );
 
-function draw_bp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+function draw_bp(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
-uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+uix_control_color_from_theme(151, 30);  
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -395,21 +494,23 @@ width=ui_width();
     gfx_lineto(line1x,line1y);
     gfx_lineto(line3x,bottom);
     gfx_lineto(line2x,bottom);
+    
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_bp2(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+function draw_bp2(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
-uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+uix_control_color_from_theme(151, 30);   
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -449,22 +550,24 @@ width=ui_width();
     
     gfx_lineto(line1x,line1y);
     gfx_lineto(line3x,line2y);
-    gfx_lineto(line2x,line2y);)
+    gfx_lineto(line2x,line2y););
+    
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_notch(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+function draw_notch(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
-uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+uix_control_color_from_theme(151, 30); 
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -490,21 +593,23 @@ width=ui_width();
     gfx_lineto(line1x,line1y);
     gfx_lineto(line3x,height);
     gfx_lineto(line2x,height);
+    
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_notch2(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+function draw_notch2(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
-uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+uix_control_color_from_theme(151, 30);   
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -540,15 +645,18 @@ width=ui_width();
     gfx_lineto(line1x,line1y);
      gfx_lineto(line3x,height);
      gfx_lineto(line2x,height);
+     
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_notch4(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (  
-
+function draw_notch4(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax, left, right, bottom, height, width) (  
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -580,21 +688,23 @@ width=ui_width();
     gfx_lineto(line3x,line1y);
     gfx_lineto(line4x,height);
     gfx_lineto(line2x,height);
+    
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_allpass(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) (
+function draw_allpass(fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
-uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+uix_control_color_from_theme(151, 30);   
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -622,21 +732,23 @@ width=ui_width();
     gfx_lineto(line1x,line1y);
     gfx_lineto(line3x,height);
     gfx_lineto(line2x,height);
+    
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_peak(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (
+function draw_peak(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
 uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -666,21 +778,23 @@ width=ui_width();
     gfx_lineto(line1x,line1y-dbscale);
     gfx_lineto(line3x,height);
     gfx_lineto(line2x,height);
+    
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_lsf(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (
+function draw_lsf(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
-uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+uix_control_color_from_theme(151, 30); 
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -702,22 +816,22 @@ width=ui_width();
     gfx_lineto(line1x,height-dbscale);
     gfx_lineto(left,height-dbscale);
 
-
+control_finish_technical();
+ui_border(); 
 );
 
-function draw_hsf(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) (
+function draw_hsf(fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax) local (fsl, dbs, rsl, fslmin, fslmax, dbsmin, dbsmax, rslmin, rslmax, left, right, bottom, height, width) (
 //colors
 uix_control_color_from_theme(120, 30);
 ui_fill();
-uix_control_color_from_theme(151, 30);
-ui_border();
-uix_control_color_from_theme(151, 30);    
+uix_control_color_from_theme(151, 30);   
 
 //bounds
 left=ui_left();
 right=ui_right();
 bottom=ui_bottom();
 height=ui_height();
+height=bottom-height/2;
 width=ui_width();
 
 //draw
@@ -741,5 +855,50 @@ width=ui_width();
     gfx_lineto(line1x,height-dbscale);
     gfx_lineto(right,height-dbscale);
 
+control_finish_technical();
+ui_border(); 
+);
 
+function draw_wavescopeinit() (
+histbuf=1000000;
+histpos=0;
+histsize=50/1000*srate|0;
+);
+
+function draw_wavescopesample() (
+histbuf[histpos]=spl0;
+histbuf[histpos+histsize]=spl1;
+histpos+=1;
+histpos >= histsize ? histpos=0;
+);
+
+function draw_wavescope() local (offs, gscale, gbuf, gscale2, ga, gv, gx, gy, width, height, left, top) (
+
+top = ui_top();
+width = ui_width();
+height = ui_height();
+left = ui_left();
+
+offs=histpos;
+gscale=width/histsize;
+gbuf=histbuf;
+gscale2=height/4;
+
+gfx_x=left;
+gfx_y=top+height/2;
+
+ga=0;
+loop(histsize,
+gv=gbuf[offs];
+offs+=1;
+offs>=histsize?offs=0;
+gx=left+ga*gscale;
+gy=top+height/2 + gv*gscale2;
+ga ? gfx_lineto(gx,gy,0) : ( gfx_x=gx; gfx_y=gy; );
+ga+=1;
+);
+
+gbuf+=histsize;
+control_finish_technical();
+ui_border(); 
 );

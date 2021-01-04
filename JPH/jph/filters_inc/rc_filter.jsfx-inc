@@ -1,0 +1,200 @@
+//tags: filter
+//author: Tale
+// Copyright (C) 2015-2017 Theo Niessink
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+// This effect filters the input signal using a single 1st-order RC filter
+// stage for 6 dB low/high/all-pass, and two filter stages for 12 dB or
+// notch/band-pass.
+// You can select the cutoff/center frequency using both the linear
+// frequency slider (for typing exact values), and the logarithmic scale
+// slider (for automation).
+
+import /inc/rc_filter2.jsfx-inc
+
+@init
+
+function scale(x) ( 1/1200 + 1199/1200 * (exp(6*x) - 1) * /* 1/(exp(6) - 1) */ 0.0024849116568445855 );
+function gain(x) ( x <= -120 ? 0 : exp(/* log(10)/20 */ 0.11512925464970228 * x) );
+
+smooth.rc_set(0.0033);
+function smooth() ( smooth.lp = this.smooth; this.smooth = smooth.rc_lp(this); );
+
+function rcinit() (
+dry.smooth = 0;
+wet.smooth = 1;
+
+min_fc = 1/60;
+);
+
+function rcslider() (
+mode = min(max(0, slider33|0), 4);
+
+slope0 = slider37 < 0.5;
+slope1 = 1.0 - slope0;
+
+fc1 = max(24000 * scale(slider35 * 0.01), min_fc);
+
+// Low/High/All-Pass
+mode < 3 ? (
+  rc0.a = rc1.a =
+  rc2.a = rc3.rc_setf_precise(fc0 = fc1);
+) :
+
+// Notch/Band-Pass
+/* mode >= 3 ? */ (
+  bw = 2^(0.5 * slider36);
+  rc0.a = rc1.rc_setf_precise(fc0 = max(fc1 / bw, min_fc));
+  rc2.a = rc3.rc_setf_precise(fc1 = max(fc1 * bw, min_fc));
+);
+
+dry = gain(-120);
+wet = gain(0);
+);
+
+function rcsample() (
+// Low-Pass
+mode == 0 ? (
+  left = rc0.rc_lp(spl0);
+  right = rc1.rc_lp(spl1);
+
+  left = slope0 * left + slope1 * rc2.rc_lp(left);
+  right = slope0 * right + slope1 * rc3.rc_lp(right);
+) :
+
+// High-Pass
+mode == 1 ? (
+  left = rc0.rc_hp_precise(spl0);
+  right = rc1.rc_hp_precise(spl1);
+
+  left = slope0 * left + slope1 * rc2.rc_hp_precise(left);
+  right = slope0 * right + slope1 * rc3.rc_hp_precise(right);
+) :
+
+// All-Pass
+mode == 2 ? (
+  left = rc0.rc_ap(spl0);
+  right = rc1.rc_ap(spl1);
+
+  left = slope0 * left + slope1 * rc2.rc_ap(left);
+  right = slope0 * right + slope1 * rc3.rc_ap(right);
+) :
+
+// Notch
+mode == 3 ? (
+  left = rc0.rc_lp(spl0);
+  right = rc1.rc_lp(spl1);
+
+  left += rc2.rc_hp_precise(spl0);
+  right += rc3.rc_hp_precise(spl1);
+) :
+
+// Band-Pass
+/* mode == 4 ? */ (
+  left = rc0.rc_hp_precise(spl0);
+  right = rc1.rc_hp_precise(spl1);
+
+  left = rc2.rc_lp(left);
+  right = rc3.rc_lp(right);
+);
+
+spl0 = dry.smooth() * spl0 + wet.smooth() * left *outgain;
+spl1 = dry.smooth * spl1 + wet.smooth * right * outgain;
+);
+
+function rcgfx() (
+            ui_split_topratio(1/10);
+            ui_automate(slider33, multipleway_switch(slider33, "lp", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider33, multipleway_switch(slider33, "hp", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider33, multipleway_switch(slider33, "bp", 4, 20, 12));
+            ui_split_next();
+                ui_automate(slider33, multipleway_switch(slider33, "notch", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider33, multipleway_switch(slider33, "allpass", 2, 20, 12));
+            ui_split_next();ui_split_next();
+            
+                ui_automate(slider37, multipleway_switch(slider37, "6db", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider37, multipleway_switch(slider37, "12db", 1, 20, 12));
+            ui_pop(); 
+            
+            
+            slider33 == 0 ? ( //lp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+            slider37 == 0 ? (
+                draw_lp(slider35, 6, 0, 0, 100, 0, 6);
+            ) : draw_lp(slider35, 12, 0, 0, 100, 0, 6);
+            
+            ui_split_next();
+                    ui_automate(slider35, labelled_dial(slider35, 100, 0, 100, 0, "cutoff", 24000*scale(slider35 *0.01), "%.i Hz", 50,50,12));
+        
+          
+          ) : slider33 == 1 ? (//hp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+            slider37 == 0 ? (
+                draw_hp(slider35, 6, 0, 0, 100, 0, 6);
+            ) : draw_hp(slider35, 12, 0, 0, 100, 0, 6);
+            
+            ui_split_next();
+                    ui_automate(slider35, labelled_dial(slider35, 100, 0, 100, 0, "cutoff", 24000*scale(slider35 *0.01), "%.i Hz", 50,50,12));
+
+                
+                
+          ) : slider33 == 4 ? (//bp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+            slider37 == 0 ? (
+                draw_bp(slider35, 6, slider36, 0, 100, 0, 6);
+            ) : draw_bp(slider35, 12, slider36, 0, 100, 0, 6);
+            
+            ui_split_next();
+                ui_split_leftratio(1/2);
+                    ui_automate(slider35, labelled_dial(slider35, 100, 0, 100, 0, "cutoff", 24000*scale(slider35 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider36, labelled_dial(slider36, 2, 0, 6, 0, "bandwidth", slider36, "%.1f", 50,50,12));
+                ui_pop();
+                
+          ) : slider33 == 3 ? (//bp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+            slider37 == 0 ? (
+                draw_notch(slider35, 6, slider36, 0, 100, 0, 6);
+            ) : draw_notch(slider35, 12, slider36, 0, 100, 0, 6);
+            
+            ui_split_next();
+                ui_split_leftratio(1/2);
+                    ui_automate(slider35, labelled_dial(slider35, 100, 0, 100, 0, "cutoff", 24000*scale(slider35 *0.01), "%.i Hz", 50,50,12));
+                ui_split_next("");
+                    ui_automate(slider36, labelled_dial(slider36, 2, 0, 6, 0, "bandwidth", slider36, "%.1f", 50,50,12));
+                ui_pop();
+                
+          ) : slider33 == 2 ? (//bp
+        ui_pop();
+                
+                //WINDOW
+        ui_split_leftratio(0.6);
+            ui_split_topratio(1/2);
+            slider37 == 0 ? (
+                draw_allpass(slider35, 6, 6, 0, 100, 0, 6);
+            ) : draw_allpass(slider35, 12, 6, 0, 100, 0, 6);
+            
+            ui_split_next();
+                    ui_automate(slider35, labelled_dial(slider35, 100, 0, 100, 0, "cutoff", 24000*scale(slider35 *0.01), "%.i Hz", 50,50,12));
+
+        );
+);

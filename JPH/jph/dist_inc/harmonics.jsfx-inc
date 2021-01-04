@@ -1,0 +1,429 @@
+// testing some formulas...
+// plugin needs better graphics...
+//witti
+
+@init
+
+function harminit() (
+ext_nodenorm=1;
+
+// DC remove
+itm1=slider29;
+itm2=slider30;
+otm1=otm2=0;
+
+// filter
+m1=m0=0;
+);
+
+function tanh(x)
+(
+x = exp(2*x);
+(x - 1) / (x + 1);
+);
+
+function cosh(x)
+(
+(exp(x) + exp(-x))/2;
+);
+
+//First antiderivative of tanh(x)
+function tanh0(x)
+(
+log(cosh(x));
+);
+
+function harmslider() (
+mode=slider20;
+fundamental=slider21;
+pregain=10^(slider22/20);
+postgain=10^(slider31/20);
+
+a=slider25; // 1/8
+b=slider26; // 1/18
+
+c=slider27;
+
+g=slider28;
+);
+
+function harmsample() (
+x0=spl0*pregain;
+x1=spl1*pregain;
+
+fundamental==1?(
+z0=x0;
+z1=x1;
+w=0.5;
+):(
+z0=0;
+z1=0;
+w=1;
+);
+
+mode==0?(
+y0=(z0+abs(x0))*w;
+y1=(z1+abs(x1))*w;
+);
+
+mode==1?(
+y0=(z0+x0^slider23)*w;
+y1=(z1+x1^slider23)*w;
+);
+
+mode==2?(
+y0=x0^slider24;
+y1=x1^slider24;
+);
+
+mode==3?(
+(x0<0||x0>0)?y0=(z0+exp(-1/x0^slider23))*w;
+(x0=0)?y0=0;
+(x1<0||x1>0)?y1=(z1+exp(-1/x1^slider23))*w;
+(x1=0)?y1=0;
+);
+
+mode==4?(
+y0=(z0+log(1+(cos(x0)-1)))*w;
+y1=(z1+log(1+(cos(x1)-1)))*w;
+);
+
+mode==5?(
+y0=(z0+(4*x0^3-3*x0))*w;
+y1=(z1+(4*x1^3-3*x1))*w;
+);
+
+mode==6?(
+y0=sin(atan(x0));
+y1=sin(atan(x1));
+);
+
+mode==7?(
+y0=((0.5*x0^3)+(0.48*x0^2)+(0.55*x0))*0.5;
+y1=((0.5*x1^3)+(0.48*x1^2)+(0.55*x1))*0.5;
+);
+
+mode==8?(
+y0=-(x0/abs(x0)*(1-exp((x0^2)/abs(x0))))*0.5;
+y1=-(x1/abs(x1)*(1-exp((x1^2)/abs(x1))))*0.5;
+);
+
+mode==9?(
+y0=(z0+(cos(x0)*sin(x0)))*w;
+y1=(z1+(cos(x1)*sin(x1)))*w;
+);
+
+mode==10?(
+y0=(z0+cos(x0*($pi/4))-0.4+exp(x0-0.25)/100)*w;
+y1=(z1+cos(x1*($pi/4))-0.4+exp(x1-0.25)/100)*w;
+);
+
+mode==11?(
+y0=(sin(z0)+(abs(sin(x0)))^slider23-0.2)*w; // -0.2 or below
+y1=(sin(z1)+(abs(sin(x1)))^slider23-0.2)*w; // -0.2 or below
+);
+
+mode==12?(
+y0=(x0-a*x0^2-b*x0^3+a)*0.5;
+y1=(x1-a*x1^2-b*x1^3+a)*0.5;
+);
+
+mode==13?(
+y0=x0-(x0^slider24)/(2*slider24);
+y1=x1-(x1^slider24)/(2*slider24);
+);
+
+mode==14?(
+y0=-0.5*log((1-x0/1.5)/(1+x0/1.5));
+y1=-0.5*log((1-x1/1.5)/(1+x1/1.5));
+);
+
+mode==15?(
+y0=x0-(x0^3)/(3*2)+(x0^5)/(5*4*3*2)-(x0^7)/(7*6*5*4*3*2)+(x0^9)/(9*8*7*6*5*4*3*2);
+y1=x1-(x1^3)/(3*2)+(x1^5)/(5*4*3*2)-(x1^7)/(7*6*5*4*3*2)+(x1^9)/(9*8*7*6*5*4*3*2);
+);
+
+mode==16?(
+y0=(z0+sin(x0)*(x0-x0^3/6+x0^5/120))*w;
+y1=(z1+sin(x1)*(x1-x1^3/6+x1^5/120))*w;
+);
+
+mode==17?(
+y0=x0^3/(1+abs(x0^3));
+y1=x1^3/(1+abs(x1^3));
+);
+
+mode==18?(
+y0=1.5*x0*(1-x0*x0/3);
+y1=1.5*x1*(1-x0*x1/3);
+);
+
+mode==19?(
+y0=2/(1+exp(-g*x0))-1;
+y1=2/(1+exp(-g*x1))-1;
+);
+
+mode==20?(
+y0=atan(x0*g)/atan(g);
+y1=atan(x1*g)/atan(g);
+);
+
+mode==21?(
+y0=atan(x0*g)/(0.2+atan(g));
+y1=atan(x1*g)/(0.2+atan(g));
+);
+
+mode==22?(
+y0=(x0-atan((x0*g)*(x0*g)*(x0*g))/atan(6*g));
+y1=(x1-atan((x1*g)*(x1*g)*(x1*g))/atan(6*g));
+);
+
+mode==23?(
+(x0>0)?y0=1-exp(-x0):y0=-1+exp(x0);
+(x1>0)?y1=1-exp(-x1):y1=-1+exp(x1);
+);
+
+mode==24?(
+y0=x0*(1+x0^2)/(1+abs(x0*(1+x0^2)));
+y1=x1*(1+x1^2)/(1+abs(x1*(1+x1^2)));
+);
+
+mode==25?(
+y0=(a*x0+b*x0^2+g*x0^3)/(1+abs(a*x0)+b*x0^2+abs(g*x0^3));
+y1=(a*x1+b*x1^2+g*x1^3)/(1+abs(a*x1)+b*x1^2+abs(g*x1^3));
+);
+
+mode==26?(
+y0=x0*(1+x0^4)/(1+abs(x0*(1+x0^4)));
+y1=x1*(1+x1^4)/(1+abs(x1*(1+x1^4)));
+);
+
+mode==27?(
+y0=(x0*abs(x0)+x0)/(x0*x0+abs(x0)+1);
+y1=(x1*abs(x1)+x1)/(x1*x1+abs(x1)+1);
+);
+
+mode==28?(
+y0=x0/(0.25*x0*x0+1);
+y1=x1/(0.25*x1*x1+1);
+);
+
+mode==29?(
+y0=x0/(1+abs(x0)+abs(a)*$pi*(0.5*x0^2-abs(x0)));
+y1=x1/(1+abs(x1)+abs(a)*$pi*(0.5*x1^2-abs(x1)));
+);
+
+mode==30?(
+y0=g*$pi*x0/(1+g*$pi*abs(x0));
+y1=g*$pi*x1/(1+g*$pi*abs(x1));
+);
+
+mode==31?(
+y0=x0*(27+x0*x0)/(27+9*x0*x0);
+y1=x1*(27+x1*x1)/(27+9*x1*x1);
+);
+
+mode==32?(
+y0=(z0+x0^slider23/slider24)*w;
+y1=(z1+x1^slider23/slider24)*w;
+);
+
+mode==33?(
+y0=(2>>1)*atan(x0)*0.6333;
+y1=(2>>1)*atan(x1)*0.6333;
+);
+
+mode==34?(
+(x0>0)?y0=(z0+x0^slider23)*w:y0=x0^slider24;
+(x1>0)?y1=(z1+x1^slider23)*w:y1=x1^slider24;
+);
+
+mode==35?(
+y0=(z0+tanh0(x0))*w;
+y1=(z1+tanh0(x1))*w;
+);
+
+mode==36?(
+y0=(z0+cosh(x0))*w;
+y1=(z1+cosh(x1))*w;
+);
+
+mode==37?(
+y0=((1+a)*x0+b*x0^2+c*x0^3)/((1+a)+b+c);
+y1=((1+a)*x1+b*x1^2+c*x1^3)/((1+a)+b+c);
+);
+
+spl0=y0*postgain;
+spl1=y1*postgain;
+
+
+// DC remove
+otm1=0.999*otm1 + spl0 - itm1; itm1=spl0; spl0=otm1;
+otm2=0.999*otm2 + spl1 - itm2; itm2=spl1; spl1=otm2;
+
+
+// initial value (send to @init) used to remove dc offset at playback start
+slider29=itm1;
+sliderchange(slider29);
+slider30=itm2;
+sliderchange(slider30);
+
+// filter
+m1=m0;
+spl0=0.5*(m1+m0=spl0);
+spl1=0.5*(m1+m0=spl1);
+);
+
+function harmgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_topratio(1/2);
+            ui_split_leftratio(1/3);
+                ui_automate(slider22, labelled_dial(slider22, 0, 0, 48, 0, "in", slider22, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(slider31, labelled_dial(slider31, -6, -48, 0, 0, "out", slider31, "%.1f dB", 50,50,12));
+            ui_split_next();
+                sprintf(#selector_text, "type %i", slider20+1);
+                // increment, maximum 10
+                next_value = min(37, slider20 + 1);
+                // decrement, minimum 0
+                prev_value = max(0, slider20 - 1);
+
+                ui_automate(slider20, control_selector2(slider20, #selector_text,
+                        next_value, prev_value));
+            ui_pop();
+        ui_pop();
+        
+control_group("");
+
+mode == 0 ? (
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fundamental"));
+);
+
+mode == 1 ?(
+ui_split_leftratio(1/2);
+    ui_automate(slider23, labelled_dial(slider23, 2, 2, 10, 0, "mod", slider23, "%.1f", 50,50,12));
+ui_split_next();
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fund"));
+ui_pop();
+);
+
+mode == 2 ?(
+ui_automate(slider24, labelled_dial(slider24, 3, 3, 11, 0, "mod", slider24, "%.1f", 50,50,12));
+);
+
+mode == 3 ?(
+ui_split_leftratio(1/2);
+    ui_automate(slider23, labelled_dial(slider23, 2, 2, 10, 0, "mod", slider23, "%.1f", 50,50,12));
+ui_split_next();
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fund"));
+ui_pop();
+);
+
+mode == 4 ?(
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fundamental"));
+);
+
+mode == 5 ?(
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fundamental"));
+);
+
+mode == 9 ?(
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fundamental"));
+);
+
+mode == 10 ?(
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fundamental"));
+);
+
+mode == 11 ?(
+ui_split_leftratio(1/2);
+    ui_automate(slider23, labelled_dial(slider23, 2, 2, 10, 0, "mod", slider23, "%.1f", 50,50,12));
+ui_split_next();
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fund"));
+ui_pop();
+);
+
+mode == 12 ?(
+ui_split_leftratio(1/2);
+    ui_automate(slider25, labelled_dial(slider25, 0, -1, 1, 0, "mod", slider25, "%.2f", 50,50,12));
+ui_split_next();
+    ui_automate(slider26, labelled_dial(slider26, 0, -1, 1, 0, "mod2", slider26, "%.2f", 50,50,12));
+ui_pop();
+);
+
+mode == 13 ?(
+ui_automate(slider24, labelled_dial(slider24, 3, 3, 11, 0, "mod", slider24, "%.1f", 50,50,12));
+);
+
+mode == 16 ?(
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fundamental"));
+);
+
+mode == 19 ?(
+ui_automate(slider28, labelled_dial(slider28, 1, 1, 20, 0, "mod", slider28, "%.2f", 50,50,12));
+);
+
+mode == 20 ?(
+ui_automate(slider28, labelled_dial(slider28, 1, 1, 20, 0, "mod", slider28, "%.2f", 50,50,12));
+);
+
+mode == 21 ?(
+ui_automate(slider28, labelled_dial(slider28, 1, 1, 20, 0, "mod", slider28, "%.2f", 50,50,12));
+);
+
+mode == 22 ?(
+ui_automate(slider28, labelled_dial(slider28, 1, 1, 20, 0, "mod", slider28, "%.2f", 50,50,12));
+);
+
+mode == 25 ?(
+ui_split_leftratio(1/3);
+    ui_automate(slider25, labelled_dial(slider25, 0, -1, 1, 0, "mod", slider25, "%.2f", 50,50,12));
+ui_split_next();
+    ui_automate(slider26, labelled_dial(slider26, 0, -1, 1, 0, "mod2", slider26, "%.2f", 50,50,12));
+ui_split_next();
+ui_automate(slider28, labelled_dial(slider28, 1, 1, 20, 0, "mod3", slider28, "%.2f", 50,50,12));
+ui_pop();
+);
+
+mode == 29 ?(
+ui_automate(slider25, labelled_dial(slider25, 0, -1, 1, 0, "mod", slider25, "%.2f", 50,50,12));
+); 
+
+mode == 30 ?(
+ui_automate(slider28, labelled_dial(slider28, 1, 1, 20, 0, "mod", slider28, "%.2f", 50,50,12));
+);
+
+mode == 32 ?(
+ui_split_leftratio(1/3);
+    ui_automate(slider23, labelled_dial(slider23, 2, 2, 10, 0, "mod", slider23, "%.1f", 50,50,12));
+ui_split_next();
+    ui_automate(slider24, labelled_dial(slider24, 3, 3, 11, 0, "mod", slider24, "%.1f", 50,50,12));
+ui_split_next();
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fund"));
+ui_pop();
+);
+
+mode == 34 ?(
+ui_split_leftratio(1/3);
+    ui_automate(slider23, labelled_dial(slider23, 2, 2, 10, 0, "mod", slider23, "%.1f", 50,50,12));
+ui_split_next();
+    ui_automate(slider24, labelled_dial(slider24, 3, 3, 11, 0, "mod", slider24, "%.1f", 50,50,12));
+ui_split_next();
+    ui_automate(slider21, labelled_switch_mid(slider21, "", "fund"));
+ui_pop();
+);
+
+mode == 37 ?(
+ui_split_leftratio(1/3);
+    ui_automate(slider25, labelled_dial(slider25, 0, -1, 1, 0, "mod", slider25, "%.2f", 50,50,12));
+ui_split_next();
+    ui_automate(slider26, labelled_dial(slider26, 0, -1, 1, 0, "mod2", slider26, "%.2f", 50,50,12));
+ui_split_next();
+ui_automate(slider27, labelled_dial(slider27, 0, -1, 1, 0, "mod3", slider27, "%.2f", 50,50,12));
+ui_pop();
+);
+
+    ui_pop();
+
+        draw_wavescope();
+);

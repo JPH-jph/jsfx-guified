@@ -1,0 +1,40 @@
+//Witti TUBE
+
+
+@init
+
+function tanh(x) (
+x = exp(2*x);
+(x - 1) / (x + 1);
+);
+
+function tube2slider() (
+pregain = 10^(slider18/20);
+tube = (slider19+6.24)*0.1186;
+);
+
+function tube2sample() (
+in0 = spl0;
+in1 = spl1;
+
+wet0 = tanh(spl0*pregain);
+wet1 = tanh(spl1*pregain);
+
+out0 = (((exp(wet0*tube) - exp(wet0*tube * -1.2)) / (exp(wet0*tube) + exp(wet0*tube * -1.0))) / tube);
+out1 = (((exp(wet1*tube) - exp(wet1*tube * -1.2)) / (exp(wet1*tube) + exp(wet1*tube * -1.0))) / tube);
+
+spl0 = out0+in0;
+spl1 = out1+in1;
+);
+
+function tube2gfx() (
+    ui_split_leftratio(0.6);
+        ui_split_leftratio(1/2);
+            ui_automate(slider18, labelled_dial(slider18, 0, -24, 24, 0, "in", slider18, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider19, labelled_dial(slider19, 50, 1, 100, 0, "tube", slider19, "%.1f %%", 50,50,12));
+        ui_pop();
+    ui_pop();
+    
+        draw_wavescope();
+);

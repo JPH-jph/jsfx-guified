@@ -1,0 +1,179 @@
+// desc:Distortion (Never Odd or Even) [SAIKE]
+// tags: static waveshaper
+// version: 0.03
+// author: Joep Vanlier
+// changelog: Add dB indicator.
+// Copyright (C) 2019 Joep Vanlier
+// License: MIT
+
+
+@init
+  /* Very flat 6-pole butterworth made of cascade of cytomics' SVF */
+  function init_HP6(freq)
+    global(srate)
+    local(res)
+    instance(g, a1_1, a1_2, a1_3, a2_1, a2_2, a2_3, k1, k2, k3)
+    (
+      g = tan( $pi * freq );
+      
+      k1  = 1.93185165257814; // sqrt(2+sqrt(3))
+      a1_1 = 1/(1+g*(g+k1));
+      
+      k2 = 1.41421356474619; // sqrt(2)
+      a1_2 = 1/(1+g*(g+k2));
+      
+      k3 = 0.517638090205042; // sqrt(2-sqrt(3))
+      a1_3 = 1/(1+g*(g+k3));
+      
+      a2_1 = g*a1_1;
+      a2_2 = g*a1_2;
+      a2_3 = g*a1_3;
+    );
+
+  function eval_HP6(v0)
+    global()
+    local(v1, v2, hp)
+    instance(ic1eq, ic2eq, ic3eq, ic4eq, ic5eq, ic6eq,
+             g, a1_1, a1_2, a1_3, a2_1, a2_2, a2_3, k1, k2, k3)
+    (
+      v1 = a1_1 * ic1eq + a2_1*(v0-ic2eq);
+      v2 = ic2eq + g*v1;
+      ic1eq = 2*v1 - ic1eq;
+      ic2eq = 2*v2 - ic2eq;
+      hp    = v0 - k1*v1 - v2;
+      
+      v1 = a1_2 * ic3eq + a2_2*(hp-ic4eq);
+      v2 = ic4eq + g*v1;
+      ic3eq = 2*v1 - ic3eq;
+      ic4eq = 2*v2 - ic4eq;
+      hp    = hp - k2*v1 - v2;
+      
+      v1 = a1_3 * ic5eq + a2_3*(hp-ic6eq);
+      v2 = ic6eq + g*v1;
+      ic5eq = 2*v1 - ic5eq;
+      ic6eq = 2*v2 - ic6eq;
+      
+      hp    = hp - k3*v1 - v2;
+    );   
+
+  function init_tilt(freq, res, A)
+    global(srate, slider54)
+    local(g, k)
+    instance(ic1eq, ic2eq, A, a1, a2, a3, m0, m1, m2)
+    (
+      g = tan(.5 * $pi * freq) / sqrt(A);
+      k = 2 - 2*res;
+      
+      a1 = 1/(1+g*(g+k));
+      a2 = g*a1;
+      a3 = g*a2;
+      
+      m0 = 1;
+      m1 = k*(A-1);
+      m2 = (A*A - 1);
+    );
+
+  function eval_tilt(v0)
+    global()
+    local(v1, v2, v3)
+    instance(ic1eq, ic2eq, a1, a2, a3, m0, m1, m2)
+    (
+      v3 = v0 - ic2eq;
+      v1 = a1 * ic1eq + a2 * v3;
+      v2 = ic2eq + a2 * ic1eq + a3*v3;
+      ic1eq = 2*v1 - ic1eq;
+      ic2eq = 2*v2 - ic2eq;    
+      
+      (v0 + m1 * v1 + m2 * v2)
+    );
+
+function oddinit() (
+dc0.init_HP6(7/srate);
+dc1.init_HP6(7/srate);
+);
+
+function oddslider() (
+log10d20_conversion = .11512925464970228420089957273422; //log(10)/20;
+preamp      = exp(log10d20_conversion * current_gain2);
+ceiling     = exp(-log10d20_conversion * current_ceiling2);
+slew_target = exp(log10d20_conversion * 15 * slew);
+inv_ceiling = 1.0 / ceiling;
+
+tilt_gain = 10^(warmth2 / 20);
+inverse_tilt_gain = 1.0 / tilt_gain;
+omega_tilt = 3200 / srate;
+l_tilt.init_tilt(omega_tilt, 0, tilt_gain);
+r_tilt.init_tilt(omega_tilt, 0, tilt_gain);
+l_itilt.init_tilt(omega_tilt, 0, inverse_tilt_gain);
+r_itilt.init_tilt(omega_tilt, 0, inverse_tilt_gain);
+);
+
+function tanh(x)
+local()
+global()
+instance()
+(
+  2/(1+exp(-2*x)) - 1
+);
+
+function processChannel(x)
+local(t1, x_corrected)
+global(even2, odd2)
+instance(current_gain2)
+(
+    current_gain2 = max(.9999*current_gain2, abs(x));
+
+    t1 = tanh(x);
+    x_corrected = x*(tanh(current_gain2))/current_gain2;
+    t1 = x_corrected + odd2*(t1-x_corrected) + even2*(t1 * t1);
+      
+    t1
+);
+
+function oddsample() (
+l = spl0;
+r = spl1;
+
+l = ceiling*preamp*l;
+r = ceiling*preamp*r;
+
+// De-emphasize before for warmth
+warmth2 != 0 ? (
+  l=l_itilt.eval_tilt(l)*tilt_gain;
+  r=r_itilt.eval_tilt(r)*tilt_gain;
+);
+
+l = left.processChannel(l)*inv_ceiling;
+r = right.processChannel(r)*inv_ceiling;
+
+// Re-emphasize before for warmth
+warmth2 != 0 ? (
+  l=l_tilt.eval_tilt(l)*inverse_tilt_gain;
+  r=r_tilt.eval_tilt(r)*inverse_tilt_gain;
+);
+
+
+spl0=dc0.eval_HP6(l);
+spl1=dc0.eval_HP6(r);
+);
+
+function oddgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_topratio(1/2);
+            ui_split_leftratio(1/2);
+                ui_automate(current_gain2, labelled_dial(current_gain2, 0, -6, 24, 0, "gain", current_gain2, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(current_ceiling2, labelled_dial(current_ceiling2, 0, -36, 0, 0, "ceiling", current_ceiling2, "%.1f dB", 50,50,12));
+            ui_pop();
+        ui_pop();
+            ui_split_leftratio(1/3);
+                ui_automate(even2, labelled_dial(even2, 0, 0, 1, 0, "even", even2, "%.3f", 50,50,12));
+            ui_split_next();
+                ui_automate(odd2, labelled_dial(odd2, 0, 0, 1, 0, "odd", odd2, "%.3f", 50,50,12));
+            ui_split_next();
+                ui_automate(warmth2, labelled_dial(warmth2, 0, -12, 12, 0, "warmth", warmth2, "%.2f dB", 50,50,12));
+            ui_pop();
+    ui_pop();
+    
+        draw_wavescope(); 
+);

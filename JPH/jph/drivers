@@ -1,0 +1,249 @@
+desc: Drivers - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+import /dist_inc/distort-fuzz.jsfx-inc
+import /dist_inc/distortion.jsfx-inc
+import /dist_inc/foldback_distortion.jsfx-inc
+import /dist_inc/mda_overdrive.jsfx-inc
+import /dist_inc/tube_amp.jsfx-inc
+import /dist_inc/tube_thingy.jsfx-inc
+import /dist_inc/harmonics.jsfx-inc
+
+slider1:20<1,300>-Shape    ---fuzz---
+slider2:-25<-60,60,1>-Hard Limit (dB)
+slider3:2<0,2,1{Left,Right,Stereo}>-Channel Mode
+
+slider4:20<0,50,1>-Gain (dB)    ---distort---
+slider5:6<1,10,1>-Hardness
+slider6:-12<-40,0,1>-Max Volume (dB)
+slider7:2<0,2,1{Left,Right,Stereo}>-Channel Mode
+
+slider8:dBCeiling=0<-48, 0,0.01> -Ceiling dBfs    ---foldback---
+slider9:dBBoost=0<  0,48,0.01> -Boost dB
+slider10:blocker=1<0,1,{Disabled,Enabled}> -DC Blocker
+
+slider11:0<0,1,0.01>-drive    ---overdrive---
+slider12:0<0,1,0.01>-muffle
+slider13:0.5<0,1,0.01>-gain
+
+slider14:0.0<-12.0,48.0,0.1>-Drive (dB)    ---tube---
+slider15:20000<20,20000,1>-Cutoff (Hz)
+slider16:1<0,1,1{Mono,Stereo}>-Mode
+slider17:1<0,3,1{Off,2x,4x,8x}>-Oversample
+
+slider18:0<-24,24,0.1>-Input (dB)    ---tube2---
+slider19:50<1,100,1>-Tube (%)
+
+slider20:19<0,37,1{z+abs(x),z+x^slider8,x^slider9,z+exp(-1/x^slider8),z+log(1+(cos(x)-1)),z+(4*x^3-3*x),sin(atan(x)),((0.5*x^3)+(0.48*x^2)+(0.55*x))*0.5,-(x/abs(x)*(1-exp((x^2)/abs(x))))*0.5,z+(cos(x)*sin(x)),z+cos(x*($pi/4))-0.4+exp(x-0.25)/100,sin(z)+(abs(sin(x)))^slider8-0.2,(x-a*x^2-b*x^3+a)*0.5,x-(x^slider9)/(2*slider9),-0.5*log((1-x/1.5)/(1+x/1.5)),x-(x^3)/(3*2)+(x^5)/(5*4*3*2)-(x^7)/(7*6*5*4*3*2)+(x^9)/(9*8*7*6*5*4*3*2),z+sin(x)*(x-x^3/6+x^5/120),x^3/(1+abs(x^3)),1.5*x*(1-x*x/3),2/(1+exp(-g*x))-1,atan(x*g)/atan(g),atan(x*g)/(0.2+atan(g)),(x-atan((x*g)*(x*g)*(x*g))/atan(6*g)),1-exp(-x),x*(1+x^2)/(1+abs(x*(1+x^2))),(a*x+b*x^2+g*x^3)/(1+abs(a*x)+b*x^2+abs(g*x^3)),x*(1+x^4)/(1+abs(x*(1+x^4))),(x*abs(x)+x)/(x*x+abs(x)+1),x/(0.25*x*x+1),x/(1+abs(x)+abs(a)*$pi*(0.5*x^2-abs(x))),g*$pi*x/(1+g*$pi*abs(x)),x*(27+x*x)/(27+9*x*x),z+x^slider8/slider9,(2shiftright1)*atan(x)*0.6333,(z+x^slider8)*w or x^slider9,tanh0(x),cosh(x),((1+a)*x+b*x^2+c*x^3)/((1+a)+b+c)}>-mode
+slider21:1<0,1,1{off,on}>-z (fundamental)
+slider22:0<0,48,1>-pre-gain (dB)
+slider23:2<2,10,.1>-slider8
+slider24:3<3,11,.1>-slider9
+slider25:0<-1,1,0.01>-a
+slider26:0<-1,1,0.01>-b
+slider27:0<-1,1,0.01>-c
+slider28:1<1,20,0.01>-g
+slider29:0<-1,1,0.000001>-L offset (r/o)
+slider30:0<-1,1,0.000001>-R offset (r/o)
+slider31:-6<-48,0,1>-post-gain (dB)
+
+//switchers
+slider61:0<0,1,1{Off,On}>-Limit
+slider62:0<-12,12,.1>-Output
+slider63:0<0,6,1>-Theme
+slider64:0<0,9,1>-Switch
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+draw_wavescopeinit();
+
+function slider_update()
+(
+needs_slider_update=0;
+
+outgain = 10^(slider62/20);
+
+slider64 == 3 ? (
+odinit();
+) : slider64 == 4 ? (
+tubeinit();
+) : slider64 == 6 ? (
+harminit();
+);
+
+slider64 == 0 ? ( 
+fuzzslider();
+) : slider64 == 1 ? (
+distortslider();
+) : slider64 == 2 ? (
+foldbackslider();
+) : slider64 == 3 ? (
+odslider();
+) : slider64 == 4 ? (
+tubeslider();
+) : slider64 == 5 ? (
+tube2slider();
+) : slider64 == 6 ? (
+harmslider();
+slider61=1;
+);
+
+slider63 < 1 ? (
+    file=0;
+) : slider63 < 2 ? (
+    file=1;
+) : slider63 < 3 ? (
+    file=2;
+) : slider63 < 5 ? (
+    file=3;
+) : slider63 < 6 ? (
+    file=4;
+) : slider63 < 7 ? (
+    file=5;
+);
+
+);
+
+@slider
+needs_slider_update=1;
+
+@block
+
+needs_slider_update ? slider_update();
+
+@sample
+slider64 == 0 ? (
+fuzzsample();
+) : slider64 == 1 ? (
+distortsample();
+) : slider64 == 2 ? (
+foldbacksample();
+) : slider64 == 3 ? (
+odsample();
+) : slider64 == 4 ? (
+tubesample();
+) : slider64 == 5 ? (
+tube2sample();
+) : slider64 == 6 ? (
+harmsample();
+);
+
+draw_wavescopesample();
+spl0*=outgain;
+spl1*=outgain;
+
+slider61 == 1 ? (
+    spl0 = min(max(spl0,-0.98),0.98);
+    spl1 = min(max(spl1,-0.98),0.98);
+);
+
+@gfx 800 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Drivers", "processing | distortion | saturation");
+
+        ui_split_leftratio(.2);
+            control_group("");
+            ui_split_topratio(1/7);
+                ui_automate(slider64, multipleway_switch(slider64, "fuzz", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "distort", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "foldback", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "overdrive", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "tube", 4, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "tube2", 5, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "harm", 6, 20, 12));
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.8);
+        control_group("");
+                
+        slider64 == 0 ? (
+            fuzzgfx();
+        ) : slider64 == 1 ? (
+            distortgfx();
+        ) : slider64 == 2 ? (
+            foldbackgfx();
+        ) : slider64 == 3 ? (
+            odgfx();
+        ) : slider64 == 4 ? (
+            tubegfx();
+        ) : slider64 == 5 ? (
+            tube2gfx();
+        ) : slider64 == 6 ? (
+            harmgfx();
+        );
+        
+        ui_pop();
+        
+
+                //out
+                control_group("");
+                ui_split_bottomratio(0.2);
+                    ui_automate(slider61, labelled_switch_mid(slider61, "", "limit"));
+                ui_pop();
+                    ui_automate(slider62, labelled_dial(slider62, 0, -24, 24, 0, "out", slider62, "%i dB", 50,50,14));
+                ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 12, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX distortions:
+    -fuzz = distortion fuzz by cockos
+    -distort = distortion by cockos
+    -foldback = foldback_distortion by chokehold
+    -overdrive = mda_overdrive by witti
+    -tube = tube_amp by tale
+    -tube2 = tube_thingy by witti
+    -harm = harmonics by witti
+
+editor: JPH
+-GUI (using Geraint Luff's API)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider63 = labelled_dial(slider63, 0, 0, 6, 0, "theme", slider63, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;
+

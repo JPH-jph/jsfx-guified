@@ -1,0 +1,51 @@
+//Witti OD MkII
+
+@init
+
+function odinit() (
+filt1 = filt2 = 0;
+);
+
+function odslider() (
+fParam1 = slider11;
+fParam2 = slider12;
+fParam3 = slider13;
+
+drive = fParam1;
+filt = pow(10,-1.6 * fParam2);
+gain = pow(10, 2 * fParam3 - 1);
+);
+
+function odsample() (
+fa = filt1;
+fb = filt2;
+
+a = spl0;
+b = spl1;
+
+aa = a>0 ? sqrt(a) : -sqrt(-a); // overdrive
+bb = b>0 ? sqrt(b) : -sqrt(-b);
+
+fa = fa + filt * (drive * (aa-a) + a - fa); // filter
+fb = fb + filt * (drive * (bb-b) + b - fb);
+
+spl0 = fa * gain;
+spl1 = fb * gain;
+
+(abs(fa)>0.0000000001) ? (filt1 = fa;) : (filt1 = 0;); // catch denormals
+(abs(fb)>0.0000000001) ? (filt2 = fb;) : (filt2 = 0;);
+);
+
+function odgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_leftratio(1/3);
+            ui_automate(slider11, labelled_dial(slider11, 0, 0, 1, 0, "drive", slider11*100, "%.1f %%", 50,50,12));
+        ui_split_next();
+            ui_automate(slider12, labelled_dial(slider12, 0, 0, 1, 0, "muffle", slider12*100, "%.1f %%", 50,50,12));
+        ui_split_next();
+            ui_automate(slider13, labelled_dial(slider13, 0.5, 0, 1, 0, "gain", slider13*40-20, "%.1f dB", 50,50,12));
+        ui_pop();
+    ui_pop();
+    
+        draw_wavescope();  
+);

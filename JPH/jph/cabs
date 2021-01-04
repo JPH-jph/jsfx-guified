@@ -1,0 +1,238 @@
+desc: Cabs - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+
+filename:6,/cabs_inc/cabs/cockos/Dumble_Overdrive_Special_Tweed_Deluxe.wav
+filename:7,/cabs_inc/cabs/cockos/Fender_Bassman_Fender_Bassman.wav
+filename:8,/cabs_inc/cabs/cockos/Fender_Bassman_Tweed_Champ.wav
+filename:9,/cabs_inc/cabs/cockos/Fender_Deluxe_Marshall_Stock_70.wav
+filename:10,/cabs_inc/cabs/cockos/Fender_Deluxe_Tweed_Champ.wav
+filename:11,/cabs_inc/cabs/cockos/Marshall_JCM800_Marshall_Stock_70.wav
+filename:12,/cabs_inc/cabs/cockos/Marshall_JCM800_Matchless_Chieftain.wav
+filename:13,/cabs_inc/cabs/cockos/Marshall_JTM45_Blackface_Deluxe.wav
+filename:14,/cabs_inc/cabs/cockos/Marshall_JTM45_Matchless_Chieftain.wav
+filename:15,/cabs_inc/cabs/cockos/Mesa_Boogie_Clean_Blackface_Twin.wav
+filename:16,/cabs_inc/cabs/cockos/Mesa_Boogie_Clean_Matchless_Chieftain.wav
+filename:17,/cabs_inc/cabs/cockos/Vox_AC30_Non_Top_Boost_Vox_AC30.wav
+
+filename:18,/cabs_inc/cabs/1x12_Tweed.wav
+filename:19,/cabs_inc/cabs/1x15_Dark_Combo.wav
+filename:20,/cabs_inc/cabs/2x12_1936.wav
+filename:21,/cabs_inc/cabs/2x12_AC.wav
+filename:22,/cabs_inc/cabs/2x12_Boutique.wav
+filename:23,/cabs_inc/cabs/4x10_Black_Face.wav
+filename:24,/cabs_inc/cabs/4x12_1960.wav
+filename:25,/cabs_inc/cabs/4x12_Boxy.wav
+filename:26,/cabs_inc/cabs/4x12_Classic.wav
+filename:27,/cabs_inc/cabs/4x12_Greenbacks.wav
+filename:28,/cabs_inc/cabs/4x12_Metalhead.wav
+filename:29,/cabs_inc/cabs/4x12_Modern.wav
+filename:30,/cabs_inc/cabs/IR_RedBox_57.wav
+//////////////////////////////////////////
+import /cabs_inc/amp-model.jsfx-inc
+import /cabs_inc/amp-model-dual.jsfx-inc
+import /cabs_inc/mda_combo_02.jsfx-inc
+import /cabs_inc/cabinet_sim.jsfx-inc
+
+slider1:1<1,24,1>-Model    ---uni---
+slider2:0<-120,30,1>-Preamp (dB)
+slider3:1<0,1,1{No,Yes}>-Upsample Impulse If Required
+slider4:0<0,1,1{L-Stereo,Stereo-Stereo}>-Channel Mode
+
+slider5:/amp_models:none:-Model (Left)    ---dual---
+slider6:/amp_models:none:-Model (Right)
+slider7:0<-120,30,1>-Preamp (dB)
+slider8:1<0,1,1{No,Yes}>-Upsample Impulse If Required
+
+slider9:0<0,7,1{DIY...,DI,speaker sim,radio,mesa boogie 1,mesa boogie 8,marshall 4x12 celestion,scooped-out metal 4x12}>-select    ---witty---
+slider10:0.5<0,1,0.01>-drive
+slider11:0.5<0,1,0.01>-bias
+slider12:0.5<0,1,0.01>-output
+slider13:0<0,1,1{mono,stereo}>-mode
+slider14:0.4<0,1,0.01>-hpf freq
+slider15:0.5<0,1,0.01>-hpf res
+slider16:0.5<0,1,0.01>-trim
+slider17:15000<1000,15000,10>-lpf
+slider18:0<-2,2,0.01>-mix1
+slider19:0<-2,2,0.01>-mix2
+slider20:0<0,250,1>-del1
+slider21:0<0,250,1>-del2
+slider22:25<0,1000,1>-hpf
+
+slider23:routing=2<0,2,1{Mono (left),Mono (right),Stereo}> -Routing    ---cab---
+slider24:fftFactor=3<0,6,1{128   [fast/bad],256,512,1024   [good],2048,4096,8192   [slow/great]}>-FFT size
+slider25:irSelection=0<0,4,1{Petaluma 4x12,Bavaria 4x12,Milton Keynes 4x12,Huddersfield 4x12,Bass 8x10}> -Cabinet
+slider26:dBout=0<-12,12,0.01> -Output [dB]
+
+//switchers
+slider61:0<0,1,1{Off,On}>-Limit
+slider62:0<-12,12,.1>-Output
+slider63:0<0,6,1>-Theme
+slider64:0<0,9,1>-Switch
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+function slider_update()
+(
+needs_slider_update=0;
+outgain = 10^(slider62/20);
+
+slider64 == 0 ? (
+uniinit();
+) : slider64 == 1 ? (
+dualinit();
+) : slider64 == 2 ? (
+wittiinit();
+) : slider64 == 3 ? (
+cabinit();
+);
+
+slider64 == 0 ? ( 
+unislider();
+) : slider64 == 1 ? (
+dualslider();
+) : slider64 == 2 ? (
+wittislider();
+) : slider64 == 3 ? (
+cabslider();
+);
+
+
+slider63 < 1 ? (
+    file=0;
+) : slider63 < 2 ? (
+    file=1;
+) : slider63 < 3 ? (
+    file=2;
+) : slider63 < 5 ? (
+    file=3;
+) : slider63 < 6 ? (
+    file=4;
+) : slider63 < 7 ? (
+    file=5;
+);
+
+);
+
+@slider
+needs_slider_update=1;
+
+@block
+needs_slider_update ? slider_update();
+slider64 == 0 ? ( 
+uniblock();
+) : slider64 == 1 ? (
+dualblock();
+);
+
+@sample
+slider64 == 0 ? (
+unisample();
+) : slider64 == 1 ? (
+dualsample();
+) : slider64 == 2 ? (
+wittisample();
+) : slider64 == 3 ? (
+cabsample();
+);
+
+spl0*=outgain;
+spl1*=outgain;
+
+slider61 == 1 ? (
+    spl0 = min(max(spl0,-0.98),0.98);
+    spl1 = min(max(spl1,-0.98),0.98);
+);
+
+@gfx 800 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Cabs", "processing | guitar | cabinets");
+
+        ui_split_leftratio(.2);
+            control_group("");
+            ui_split_topratio(1/4);
+                ui_automate(slider64, multipleway_switch(slider64, "uni", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "dual", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "witty", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "cab", 3, 20, 12));
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.8);
+        control_group("");
+                
+        slider64 == 0 ? (
+            unigfx();
+        ) : slider64 == 1 ? (
+            dualgfx();
+        ) : slider64 == 2 ? (
+            wittigfx();
+        ) : slider64 == 3 ? (
+            cabgfx();
+        );
+        
+        ui_pop();
+        
+
+                //out
+                control_group("");
+                ui_split_bottomratio(0.2);
+                    ui_automate(slider61, labelled_switch_mid(slider61, "", "limit"));
+                ui_pop();
+                    ui_automate(slider62, labelled_dial(slider62, 0, -24, 24, 0, "out", slider62, "%i dB", 50,50,14));
+                ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 12, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX cabinet sims:
+    -uni = convolution amp modeler by cockos
+    -dual = convolution amp modeler dual by cockos
+    -witty = mda_combo_02 by witti
+    -cab = cabinet_sim by chokehold
+
+editor: JPH
+-GUI (using Geraint Luff's API)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider63 = labelled_dial(slider63, 0, 0, 6, 0, "theme", slider63, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

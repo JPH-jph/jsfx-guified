@@ -1,0 +1,64 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+
+//Distortion [COCKOS]
+//tags: guitar distortion waveshaper
+//author: Cockos
+
+@init
+
+function distortslider() (
+preamp=2^(slider4/6);
+soft=2^slider5;
+maxv=2 ^ (slider6/6);
+
+//maxv=0.5 * (soft+maxv - sqrt((soft+maxv)*(soft+maxv)-4*(maxv*(soft-1)-1)));
+);
+
+function distortsample() (
+slider7 != 1 ? (
+spl0*=preamp;
+t=abs(spl0);
+t > maxv ? 
+(
+  s=sign(spl0);
+  diff=t-maxv;
+  spl0=s*(maxv + diff/(soft+diff));
+);
+
+);
+
+slider7 != 0 ? (
+spl1*=preamp;
+t=abs(spl1);
+t > maxv ? 
+(
+  s=sign(spl1);
+  diff=t-maxv;
+  spl1=s*(maxv + diff/(soft+diff));
+);
+
+);
+);
+
+function distortgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_leftratio(1/4);
+            ui_automate(slider4, labelled_dial(slider4, 20, 0, 50, 0, "gain", slider4, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 6, 1, 10, 0, "hardness", slider5, "%.1f", 50,50,12));
+        ui_split_next();
+            ui_automate(slider6, labelled_dial(slider6, -12, -40, 0, 0, "hard limit", slider6, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_split_topratio(1/3);
+                    ui_automate(slider7, multipleway_switch_mid(slider7, "left", 0, 20, 10));
+                ui_split_next();
+                    ui_automate(slider7, multipleway_switch_mid(slider7, "right", 1, 20, 10));
+                ui_split_next();
+                    ui_automate(slider7, multipleway_switch_mid(slider7, "stereo", 2, 20, 10));
+                ui_pop();
+        ui_pop();
+    ui_pop();
+    
+        draw_wavescope();
+);
