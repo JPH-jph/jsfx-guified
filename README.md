@@ -23,12 +23,10 @@ Right now the collection includes:
 ||eq560|
 |liteon|bassmanager|
 ||ringmodulator|
-||waveshapermulti|
 |loser|compciter|
 ||digital drum compressor|
 ||digital versatile compressor v2|
 ||exciter|
-||waveShapingDstr|
 |remaincalm|paranoiamangler (bundled with loser's amplitudeModulator)|
 |sai'ke|pop rocks|
 ||wahriffic|
@@ -41,10 +39,17 @@ Right now the collection includes:
 |tale|colored_noise|
 |unknown|graphdist-dyn|
 |jph|voice control|
-||filters (collection of filters by liteon, saike and witti)|
+||filters (collection of filters by various authors)|
+||cabs (collection of cabinet sims by various authors)|
+||shapers (collection of waveshapers / saturators / clippers by various authors)|
+||drivers (collection of saturators / distortion plugins by various authors)|
 
 ### Screenshots
 ![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/filters.png)
-![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/consolidator.png)
-![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/eq.png)
-![Screenshot#34](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/mangler.png)
+![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/shapers.png)
+![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/consolidator.png)
+![Screenshot#4](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/eq.png)
+![Screenshot#5](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/mangler.png)
+
+NO WARRANTY IS GRANTED. THESE PLUG-INs ARE PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTY OF ANY KIND. NO LIABILITY IS GRANTED, INCLUDING, BUT NOT LIMITED TO, ANY DIRECT OR INDIRECT,  SPECIAL,  INCIDENTAL OR CONSEQUENTIAL DAMAGE ARISING OUT OF  THE  USE  OR INABILITY  TO  USE  THESE PLUG-INs,  COMPUTER FAILTURE  OF MALFUNCTION INCLUDED.BY USING THESE PLUG-INs YOU RELINQUISH YOUR CLAIM TO SUE THE AUTHOR, AS WELL AS THE CLAIM TO
+ENTRUST SOMEBODY ELSE WITH DOING SO.
