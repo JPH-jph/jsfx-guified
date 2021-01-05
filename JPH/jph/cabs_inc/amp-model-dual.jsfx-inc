@@ -205,12 +205,14 @@ lastblock[bp2]=spl0*preamp;
 lastblock[bp2+1]=0;
 
 spl0=curblock[bp2];
-spl1=curblock[bp2+1];
+spl1=curblock[bp2+2]; //curblock[bp2+1]
+
+
 
 bpos < fftsize-chunksize ? 
 (
   spl0+=lastblock[chunksize2+bp2];
-  spl1+=lastblock[chunksize2+bp2+1];
+  spl1+=lastblock[chunksize2+bp2+2]; //lastblock[chunksize2+bp2+1]
 );
 
 

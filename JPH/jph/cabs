@@ -97,7 +97,7 @@ freemem = ui_setup(freemem); // returns the first index it's not using
 function slider_update()
 (
 needs_slider_update=0;
-outgain = 10^(slider62/20);
+outgaina = 10^(slider62/20);
 
 slider64 == 0 ? (
 uniinit();
@@ -158,8 +158,8 @@ wittisample();
 cabsample();
 );
 
-spl0*=outgain;
-spl1*=outgain;
+spl0*=outgaina;
+spl1*=outgaina;
 
 slider61 == 1 ? (
     spl0 = min(max(spl0,-0.98),0.98);

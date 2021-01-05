@@ -18,38 +18,39 @@ desc:31 Band EQ - GUI
 slider1:0<-15,15,0.1>-Gain (dB)
 slider5:0<0,6,1{off,25,50,75,100,125,150}>-highpass (Hz)
 
-slider10:0<-15,15,0.1>-20 Hz
-slider11:0<-15,15,0.1>-25 Hz
-slider12:0<-15,15,0.1>-31.5 Hz
-slider13:0<-15,15,0.1>-40 Hz
-slider14:0<-15,15,0.1>-50 Hz
-slider15:0<-15,15,0.1>-63 Hz
-slider16:0<-15,15,0.1>-80 Hz
-slider17:0<-15,15,0.1>-100 Hz
-slider18:0<-15,15,0.1>-125 Hz
-slider19:0<-15,15,0.1>-160 Hz
-slider20:0<-15,15,0.1>-200 Hz
-slider21:0<-15,15,0.1>-250 Hz
-slider22:0<-15,15,0.1>-315 Hz
-slider23:0<-15,15,0.1>-400 Hz
-slider24:0<-15,15,0.1>-500 Hz
-slider25:0<-15,15,0.1>-630 Hz
-slider26:0<-15,15,0.1>-800 Hz
-slider27:0<-15,15,0.1>-1 kHz
-slider28:0<-15,15,0.1>-1.25 kHz
-slider29:0<-15,15,0.1>-1.6 kHz
-slider30:0<-15,15,0.1>-2 kHz
-slider31:0<-15,15,0.1>-2.5 kHz
-slider32:0<-15,15,0.1>-3.15 kHz
-slider33:0<-15,15,0.1>-4 kHz
-slider34:0<-15,15,0.1>-5 kHz
-slider35:0<-15,15,0.1>-6.3 kHz
-slider36:0<-15,15,0.1>-8 kHz
-slider37:0<-15,15,0.1>-10 kHz
-slider38:0<-15,15,0.1>-12.5 kHz
-slider39:0<-15,15,0.1>-16 kHz
-slider40:0<-15,15,0.1>-20 kHz
-slider41:0<0,6,1>-Theme
+slider10:0<-18,18,0.1>-20 Hz
+slider11:0<-18,18,0.1>-25 Hz
+slider12:0<-18,18,0.1>-31.5 Hz
+slider13:0<-18,18,0.1>-40 Hz
+slider14:0<-18,18,0.1>-50 Hz
+slider15:0<-18,18,0.1>-63 Hz
+slider16:0<-18,18,0.1>-80 Hz
+slider17:0<-18,18,0.1>-100 Hz
+slider18:0<-18,18,0.1>-125 Hz
+slider19:0<-18,18,0.1>-160 Hz
+slider20:0<-18,18,0.1>-200 Hz
+slider21:0<-18,18,0.1>-250 Hz
+slider22:0<-18,18,0.1>-315 Hz
+slider23:0<-18,18,0.1>-400 Hz
+slider24:0<-18,18,0.1>-500 Hz
+slider25:0<-18,18,0.1>-630 Hz
+slider26:0<-18,18,0.1>-800 Hz
+slider27:0<-18,18,0.1>-1 kHz
+slider28:0<-18,18,0.1>-1.25 kHz
+slider29:0<-18,18,0.1>-1.6 kHz
+slider30:0<-18,18,0.1>-2 kHz
+slider31:0<-18,18,0.1>-2.5 kHz
+slider32:0<-18,18,0.1>-3.15 kHz
+slider33:0<-18,18,0.1>-4 kHz
+slider34:0<-18,18,0.1>-5 kHz
+slider35:0<-18,18,0.1>-6.3 kHz
+slider36:0<-18,18,0.1>-8 kHz
+slider37:0<-18,18,0.1>-10 kHz
+slider38:0<-18,18,0.1>-12.5 kHz
+slider39:0<-18,18,0.1>-16 kHz
+slider40:0<-18,18,0.1>-20 kHz
+slider41:0<0,5,1>-Theme
+slider42:1<0,3,1>-Cut
 
 //////////////////////////////////////////
 import rbj_filter.jsfx-inc
@@ -195,11 +196,11 @@ slider41 < 1 ? (
     file=1;
 ) : slider41 < 3 ? (
     file=2;
-) : slider41 < 5 ? (
+) : slider41 < 4 ? (
     file=3;
-) : slider41 < 6 ? (
+) : slider41 < 5 ? (
     file=4;
-) : slider41 < 7 ? (
+) : slider41 < 6 ? (
     file=5;
 );
   
@@ -223,6 +224,7 @@ slider5 ? (
 	spl0 = hp0.rbj_tdf2(spl0);
 	spl1 = hp1.rbj_tdf2(spl1);
 	);
+	
 
 os0.os_up2(spl0);
 os1.os_up2(spl1);
@@ -358,86 +360,126 @@ os1.y0 = band130.rbj_tdf2( os1.y0 );
 spl0 = os0.os_down2();
 spl1 = os1.os_down2();
 
-@gfx 1200 350
+
+@gfx 1200 500
   
 control_start("main", "bitmap-simple", file);
 
 ui_screen() == "main" ? (
 title_desc("31 Band EQ", "processing | equalizer | eq | analog | console");
 
-	   ui_split_leftratio(0.95);                    
+slider42 == 0 ? (
+    vally=6;
+) : slider42 == 1 ? (
+    vally=12;
+) : slider42 == 2 ? (
+    vally=15;
+) : slider42 == 3 ? (
+    vally=18;
+);
+
+	   ui_split_leftratio(0.9);                    
 	   control_group("");
-		   ui_split_leftratio(1/31);
-			  ui_automate(slider10, labelled_slider(slider10,0, -15, 15, 0, "20", slider10, "%.1f", 170,25,12,14));
+		   ui_split_leftratio(1/31.5);
+			  ui_automate(slider10, labelled_slider_jph(slider10,0, -vally, vally, 0, "20", slider10, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider11, labelled_slider(slider11,0, -15, 15, 0, "25", slider11, "%.1f", 170,25,12,14));
+			  ui_automate(slider11, labelled_slider_jph(slider11,0, -vally, vally, 0, "25", slider11, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider12, labelled_slider(slider12,0, -15, 15, 0, "31.5", slider12, "%.1f", 170,25,12,14));
+			  ui_automate(slider12, labelled_slider_jph(slider12,0, -vally, vally, 0, "31.5", slider12, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider13, labelled_slider(slider13,0, -15, 15, 0, "40", slider13, "%.1f", 170,25,12,14));
+			  ui_automate(slider13, labelled_slider_jph(slider13,0, -vally, vally, 0, "40", slider13, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider14, labelled_slider(slider14,0, -15, 15, 0, "50", slider14, "%.1f", 170,25,12,14));
+			  ui_automate(slider14, labelled_slider_jph(slider14,0, -vally, vally, 0, "50", slider14, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider15, labelled_slider(slider15,0, -15, 15, 0, "63", slider15, "%.1f", 170,25,12,14));
+			  ui_automate(slider15, labelled_slider_jph(slider15,0, -vally, vally, 0, "63", slider15, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider16, labelled_slider(slider16,0, -15, 15, 0, "80", slider16, "%.1f", 170,25,12,14));
+			  ui_automate(slider16, labelled_slider_jph(slider16,0, -vally, vally, 0, "80", slider16, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider17, labelled_slider(slider17,0, -15, 15, 0, "100", slider17, "%.1f", 170,25,12,14));
+			  ui_automate(slider17, labelled_slider_jph(slider17,0, -vally, vally, 0, "100", slider17, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider18, labelled_slider(slider18,0, -15, 15, 0, "125", slider18, "%.1f", 170,25,12,14));
+			  ui_automate(slider18, labelled_slider_jph(slider18,0, -vally, vally, 0, "125", slider18, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider19, labelled_slider(slider19,0, -15, 15, 0, "160", slider19, "%.1f", 170,25,12,14));
+			  ui_automate(slider19, labelled_slider_jph(slider19,0, -vally, vally, 0, "160", slider19, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider20, labelled_slider(slider20,0, -15, 15, 0, "200", slider20, "%.1f", 170,25,12,14));
+			  ui_automate(slider20, labelled_slider_jph(slider20,0, -vally, vally, 0, "200", slider20, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider21, labelled_slider(slider21,0, -15, 15, 0, "250", slider21, "%.1f", 170,25,12,14));
+			  ui_automate(slider21, labelled_slider_jph(slider21,0, -vally, vally, 0, "250", slider21, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider22, labelled_slider(slider22,0, -15, 15, 0, "315", slider22, "%.1f", 170,25,12,14));
+			  ui_automate(slider22, labelled_slider_jph(slider22,0, -vally, vally, 0, "315", slider22, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider23, labelled_slider(slider23,0, -15, 15, 0, "400", slider23, "%.1f", 170,25,12,14));
+			  ui_automate(slider23, labelled_slider_jph(slider23,0, -vally, vally, 0, "400", slider23, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider24, labelled_slider(slider24,0, -15, 15, 0, "500", slider24, "%.1f", 170,25,12,14));
+			  ui_automate(slider24, labelled_slider_jph(slider24,0, -vally, vally, 0, "500", slider24, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider25, labelled_slider(slider25,0, -15, 15, 0, "630", slider25, "%.1f", 170,25,12,14));
+			  ui_automate(slider25, labelled_slider_jph(slider25,0, -vally, vally, 0, "630", slider25, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider26, labelled_slider(slider26,0, -15, 15, 0, "800", slider26, "%.1f", 170,25,12,14));
+			  ui_automate(slider26, labelled_slider_jph(slider26,0, -vally, vally, 0, "800", slider26, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider27, labelled_slider(slider27,0, -15, 15, 0, "1k", slider27, "%.1f", 170,25,12,14));
+			  ui_automate(slider27, labelled_slider_jph(slider27,0, -vally, vally, 0, "1k", slider27, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider28, labelled_slider(slider28,0, -15, 15, 0, "1.25k", slider28, "%.1f", 170,25,12,14));
+			  ui_automate(slider28, labelled_slider_jph(slider28,0, -vally, vally, 0, "1.25k", slider28, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider29, labelled_slider(slider29,0, -15, 15, 0, "1.6k", slider29, "%.1f", 170,25,12,14));
+			  ui_automate(slider29, labelled_slider_jph(slider29,0, -vally, vally, 0, "1.6k", slider29, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider30, labelled_slider(slider30,0, -15, 15, 0, "2k", slider30, "%.1f", 170,25,12,14));
+			  ui_automate(slider30, labelled_slider_jph(slider30,0, -vally, vally, 0, "2k", slider30, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider31, labelled_slider(slider31,0, -15, 15, 0, "2.5k", slider31, "%.1f", 170,25,12,14));
+			  ui_automate(slider31, labelled_slider_jph(slider31,0, -vally, vally, 0, "2.5k", slider31, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider32, labelled_slider(slider32,0, -15, 15, 0, "3.15k", slider32, "%.1f", 170,25,12,14));
+			  ui_automate(slider32, labelled_slider_jph(slider32,0, -vally, vally, 0, "3.15k", slider32, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider33, labelled_slider(slider33,0, -15, 15, 0, "4k", slider33, "%.1f", 170,25,12,14));
+			  ui_automate(slider33, labelled_slider_jph(slider33,0, -vally, vally, 0, "4k", slider33, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider34, labelled_slider(slider34,0, -15, 15, 0, "5k", slider34, "%.1f", 170,25,12,14));
+			  ui_automate(slider34, labelled_slider_jph(slider34,0, -vally, vally, 0, "5k", slider34, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider35, labelled_slider(slider35,0, -15, 15, 0, "6.3k", slider35, "%.1f", 170,25,12,14));
+			  ui_automate(slider35, labelled_slider_jph(slider35,0, -vally, vally, 0, "6.3k", slider35, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider36, labelled_slider(slider36,0, -15, 15, 0, "8k", slider36, "%.1f", 170,25,12,14));
+			  ui_automate(slider36, labelled_slider_jph(slider36,0, -vally, vally, 0, "8k", slider36, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider37, labelled_slider(slider37,0, -15, 15, 0, "10k", slider37, "%.1f", 170,25,12,14));
+			  ui_automate(slider37, labelled_slider_jph(slider37,0, -vally, vally, 0, "10k", slider37, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider38, labelled_slider(slider38,0, -15, 15, 0, "12.5k", slider38, "%.1f", 170,25,12,14));
+			  ui_automate(slider38, labelled_slider_jph(slider38,0, -vally, vally, 0, "12.5k", slider38, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider39, labelled_slider(slider39,0, -15, 15, 0, "16k", slider39, "%.1f", 170,25,12,14));
+			  ui_automate(slider39, labelled_slider_jph(slider39,0, -vally, vally, 0, "16k", slider39, "%.1f", 300,25,12,12));
 		   ui_split_next();
-			  ui_automate(slider40, labelled_slider(slider40,0, -15, 15, 0, "20k", slider40, "%.1f", 170,25,12,14));
+			  ui_automate(slider40, labelled_slider_jph(slider40,0, -vally, vally, 0, "20k", slider40, "%.1f", 300,25,12,12));
+		   ui_split_next();
+		   ui_align(-1,0.05);
+				 ui_font(#face, 14, 1 , 1);
+				 ui_text("Hz");
+		   ui_align(-1,0.95);
+				 ui_font(#face, 14, 1 , 1);
+				 ui_text("dB");
 		   ui_pop();
 	ui_pop();
 	
 	control_group("");
-	ui_split_topratio(.3);
-		ui_automate(slider5, labelled_dial(slider5,0, 0, 6, 0, "hp", slider5, slider5 < 1 ? "off" : slider5 < 2 ? "25 Hz" : slider5 < 3 ? "50 Hz" : slider5 < 4 ? "75 Hz" : slider5 < 5 ? "100 Hz" : slider5 < 6 ? "125 Hz" : "150 Hz", 30,30,12));
-	ui_pop();
-		ui_automate(slider1, labelled_slider(slider1,0, -15, 15, 0, "gain", slider1, "%.1f dB", 120,20,14,14));
-	ui_pop(); 
+		ui_split_topratio(1/3);
+			ui_automate(slider5, labelled_dial(slider5,0, 0, 6, 0, "", slider5, slider5 < 1 ? "off" : slider5 < 2 ? "25 Hz" : slider5 < 3 ? "50 Hz" : slider5 < 4 ? "75 Hz" : slider5 < 5 ? "100 Hz" : slider5 < 6 ? "125 Hz" : "150 Hz", 50,50,12));
+			uix_control_color_from_theme(151, 30);
+			gfx_line(ui_left(),ui_bottom(),ui_right(),ui_bottom());
+			ui_align(0,0.05);
+			   ui_font(#face, 14, 1 , 1);
+			   ui_text("hp");
+		ui_split_next();
+			ui_split_topratio(1/4);
+				ui_automate(slider42, multipleway_switch_sp(slider42, "6", 0, 20, 12));  
+				ui_align(0,-1);
+				   ui_font(#face, 14, 1 , 1);
+				   ui_text("cut");
+			ui_split_next();
+				ui_automate(slider42, multipleway_switch_sp(slider42, "12", 1, 20, 12)); 
+			ui_split_next();
+				ui_automate(slider42, multipleway_switch_sp(slider42, "15", 2, 20, 12)); 
+			ui_split_next();
+				ui_automate(slider42, multipleway_switch_sp(slider42, "18", 3, 20, 12)); 
+			ui_pop();
+			gfx_line(ui_left(),ui_bottom(),ui_right(),ui_bottom());
+		ui_split_next();
+			ui_automate(slider1, labelled_dial(slider1, 0, -15, 15, 0, "", slider1, "%.1f dB", 50,50,12));
+			ui_align(0,0.1);
+			   ui_font(#face, 14, 1 , 1);
+			   ui_text("gain");
+		ui_pop(); 
 	   
 ) : ui_screen() == "opts" ? (
   control_navbar("about", -1, -1);
@@ -454,11 +496,16 @@ IMPORTANT: requires rbj_filter.jsfx-inc (thank you Tale)
 hardcoded to 2x to keep higher frequencies from being too cramped
 
 editor: JPH
--GUI (using Geraint Luff's API");
+-GUI (using Geraint Luff's API)
+You can now draw curves by hovering over the bands and holding down the shift key.
+You can reset the bands by hovering over them and holding the right mouse button.
+*For this functionality to work, you have to perform a mouseclick before somewhere in the GUI.*
+You can reset one band by doubleclicking the handle.
+You can type in values by rightclicking the band once.");
 ui_align(.5, -1);
 ui_split_rightratio(0.2);
     control_group("");
-    slider41 = labelled_dial(slider41, 0, 0, 6, 0, "theme", slider41, "%i", 50,50,14);
+    slider41 = labelled_dial(slider41, 0, 0, 5, 0, "theme", slider41, "%i", 50,50,14);
 ui_pop();
 
 ) : ui_system();

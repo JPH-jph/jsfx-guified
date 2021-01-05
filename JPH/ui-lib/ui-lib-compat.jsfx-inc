@@ -1,6 +1,107 @@
 @init
 
 ///////////////////////////ADDED FUNCTIONS JPH///////////////////////////////
+function uix_control_slider_jph(value, range_low, range_high, curve_bias, hasDefault, defaultValue, linkToBottom) local(valueratio, screenratio, state, barheight, 	handlesize) (
+	// We calculate screenratio first (before updating value) because then any rounding/limiting applied to the value is reflected in the UI
+	screenratio = uix_slider_value_to_ratio(value, range_low, range_high, curve_bias);
+
+	ui_push_width(ui_texth()*2);
+		handlesize = ui_width();
+		uix_control_theme == 2/*uix_THEME:TRON*/ ? (
+			control_background_technical();
+		) : (
+			control_background_inset();
+			control_finish_inset();
+		);
+		state = control_state();
+
+		ui_push();
+			linkToBottom ? (
+				barheight = floor((ui_height() - 1)*screenratio + 1.5);
+				ui_split_bottom(barheight);
+			) : (
+				ui_align(0.5, 1 - screenratio);
+				ui_push_height(handlesize);
+			);
+				uix_control_theme == 2/*uix_THEME:TRON*/ ? (
+					ui_color(121, 173, 185);
+					ui_fill();
+				) : (
+					control_background_enabled(state);
+					control_finish_enabled(state);
+				);
+			ui_pop();
+		ui_pop();
+		uix_control_theme == 2/*uix_THEME:TRON*/ ? (
+			control_finish_technical();
+		) : (
+			0;
+		);
+	ui_pop();
+    
+	ui_mouse_down() || ui_drag() ? (
+		screenratio = linkToBottom ? (
+			1 - ui_mouse_yratio()
+		) : (
+			(ui_height() - ui_mouse_y() - handlesize*0.5)/(ui_height() - handlesize);
+		);
+		value = uix_slider_ratio_to_value(screenratio, range_low, range_high, curve_bias);
+	);
+
+	ui_hover() && mouse_cap ==8 ? (
+		screenratio = linkToBottom ? (
+			1 - ui_mouse_yratio()
+		) : (
+			(ui_height() - ui_mouse_y() - handlesize*0.5)/(ui_height() - handlesize);
+		);
+		value = uix_slider_ratio_to_value(screenratio, range_low, range_high, curve_bias);
+	);
+    
+	ui_scroll_y() ? (
+		valueratio = uix_slider_value_to_ratio(value, range_low, range_high, curve_bias);
+		valueratio += ui_scroll_y()/uix_scroll_scale;
+		value = uix_slider_ratio_to_value(valueratio, range_low, range_high, curve_bias);
+	);
+	ui_hover() && mouse_cap ==2 ? (
+		value = defaultValue;
+		uix_undo_point();
+	);
+	ui_scroll_y() ? uix_undo_point(1);
+	ui_drag_up() ? uix_undo_point();
+	value;
+);
+
+function control_slider_jph(value, range_low, range_high, curve_bias, default) (
+	uix_control_slider_jph(value, range_low, range_high, curve_bias, 1, default, 0);
+);
+function control_slider_jph(value, range_low, range_high, curve_bias) (
+	uix_control_slider_jph(value, range_low, range_high, curve_bias, 0, 0, 0);
+);
+function control_slider_jph(value, range_low, range_high) (
+	control_slider_jph(value, range_low, range_high, 0);
+);
+
+function labelled_slider_jph(value, default, low, high, bias, label, displayformat, format, height, width, textsize1, textsize2) local (value, default, low, high, bias, label, displayformat, format, height, width, textsize1, textsize2) (
+    ui_push();
+        ui_push_height(height);
+            ui_push_width(width);
+                value = control_slider_jph(value, low, high, bias);
+                uix_control_color_from_theme(151, 30);
+                gfx_line(ui_left(),ui_top()+ui_height()/2,ui_right(),ui_top()+ui_height()/2,0.5);
+            ui_pop();ui_pop();
+        ui_align(-1,0.05);
+                ui_font(#face, textsize1, 0, 0);
+                ui_text(label);
+        ui_align(-1,0.95);
+                ui_font(#face, textsize2, 0, 0);
+                value = control_hidden_textnumber(value, displayformat, format);
+        ui_click() && ui_clickcount() == 2 ? (
+            value = default;
+        );
+  ui_pop();
+  value;
+);
+
 function labelled_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) local (value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
   ui_push();
     ui_push_width(size);
@@ -178,7 +279,7 @@ ui_align(-1,.7);
               ui_pop();
       ui_pop();
              //ui_align(0.5,0.3);
-             ui_color(0, 0, 0, 0.5);
+             uix_control_color_from_theme(151, 30);
              ui_font(#face, textsize, 0, 0);
              ui_text(text);
       sliddy;
