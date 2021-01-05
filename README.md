@@ -48,7 +48,7 @@ Right now the collection includes:
 ![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/filters.png)
 ![Screenshot#2](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/shapers.png)
 ![Screenshot#3](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/consolidator.png)
-![Screenshot#4](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/eq.png)
+![Screenshot#4](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/eq2.png)
 ![Screenshot#5](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/mangler.png)
 
 NO WARRANTY IS GRANTED. THESE PLUG-INs ARE PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTY OF ANY KIND. NO LIABILITY IS GRANTED, INCLUDING, BUT NOT LIMITED TO, ANY DIRECT OR INDIRECT,  SPECIAL,  INCIDENTAL OR CONSEQUENTIAL DAMAGE ARISING OUT OF  THE  USE  OR INABILITY  TO  USE  THESE PLUG-INs,  COMPUTER FAILTURE  OF MALFUNCTION INCLUDED.BY USING THESE PLUG-INs YOU RELINQUISH YOUR CLAIM TO SUE THE AUTHOR, AS WELL AS THE CLAIM TO ENTRUST SOMEBODY ELSE WITH DOING SO.
