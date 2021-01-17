@@ -43,6 +43,7 @@ Right now the collection includes:
 ||cabs (collection of cabinet sims by various authors)|
 ||shapers (collection of waveshapers / saturators / clippers by various authors)|
 ||drivers (collection of saturators / distortion plugins by various authors)|
+||metal box|
 
 ### Screenshots
 ![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/filters.png)

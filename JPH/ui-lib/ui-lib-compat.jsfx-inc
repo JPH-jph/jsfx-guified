@@ -1,6 +1,48 @@
 @init
 
 ///////////////////////////ADDED FUNCTIONS JPH///////////////////////////////
+function recta(r,g,b,a,w) local (x,r,g,b,a) (
+r+g+b > 3 ? (
+    uix_control_color_from_theme(151, 30);
+) : (
+    gfx_r=r ;gfx_g=g ; gfx_b=b; gfx_a=a;
+);
+x=0;
+loop(w,
+  gfx_roundrect(ui_left()+x/2,ui_top()+x/2,ui_width()-x,ui_height()-x,20);
+x+=0.3;
+);
+);
+
+function control_group_jph(text,recta,r,g,b,where,w) local(texth, textw, textl, textr, textv) (
+recta ? (
+recta(r,g,b,1,w);
+);
+
+ui_push();
+ui_pop();
+
+where ? (
+strlen(text) > 0 ? (
+ui_font(#face, 20, 1, 1);
+gfx_r=r; gfx_b=b; gfx_g=g;
+    ui_split_top(ui_texth());
+        gfx_line(ui_left(),ui_bottom(),ui_right(),ui_bottom());
+        ui_text(text);
+    ui_pop();
+);
+) : 
+strlen(text) > 0 ? (
+ui_font(#face, 20, 1, 1);
+gfx_r=r; gfx_b=b; gfx_g=g;
+    ui_split_bottom(ui_texth());
+        gfx_line(ui_left(),ui_top(),ui_right(),ui_top());
+        ui_text(text);
+    ui_pop();
+);
+ui_pad();
+);
+
 function uix_control_slider_jph(value, range_low, range_high, curve_bias, hasDefault, defaultValue, linkToBottom) local(valueratio, screenratio, state, barheight, 	handlesize) (
 	// We calculate screenratio first (before updating value) because then any rounding/limiting applied to the value is reflected in the UI
 	screenratio = uix_slider_value_to_ratio(value, range_low, range_high, curve_bias);
@@ -85,7 +127,7 @@ function labelled_slider_jph(value, default, low, high, bias, label, displayform
     ui_push();
         ui_push_height(height);
             ui_push_width(width);
-                value = control_slider_jph(value, low, high, bias);
+                value = control_slider_jph(value, low, high, bias, default);
                 uix_control_color_from_theme(151, 30);
                 gfx_line(ui_left(),ui_top()+ui_height()/2,ui_right(),ui_top()+ui_height()/2,0.5);
             ui_pop();ui_pop();
@@ -139,6 +181,65 @@ function headless_dial(value, default, low, high, bias, label, formatvalue, form
   value;
 );
 
+function uix_control_dial_jph(value, range_low, range_high, curve_bias, hasDefault, defaultValue, linkToLeft)  local(valueratio, screenratio, centrex, centrey, radius, inner_radius, highangle, lowangle, angle, x1, x2, y1, y2) (
+	screenratio = uix_slider_value_to_ratio(value, range_low, range_high, curve_bias);
+
+	radius = min(min(ui_width_retina(), ui_height_retina())/2 - 1, 30*uix_drawconfig_current[9/*uix_DRAWCONFIG:RETINA_SCALING*/]);
+	centrex = (ui_left_retina() + radius) + (ui_width_retina() - radius*2 - 1)*ui_halign();
+	centrey = (ui_top_retina() + radius) + (ui_height_retina() - radius*2 - 1)*ui_valign();
+	inner_radius = radius - 2*(1 + ui_retina());
+
+	// Draw arc
+	lowangle = -2.3;
+	highangle = 2.3;
+	angle = lowangle + (highangle - lowangle)*(screenratio*0.98 + 0.01);
+
+    gfx_blit(uix_control_theme_buffer, 1, 0, 980, 20, 120, 120, centrex - radius + 0.5, centrey - radius + 0.5, radius*2, radius*2);
+    gfx_blit(uix_control_theme_buffer, 1, angle, 980, 200, 120, 120, centrex - radius + 0.5, centrey - radius + 0.5, radius*2, radius*2);
+
+	hasDefault && ui_click() && ui_clickcount() == 2 ? (
+		value = defaultValue;
+	);
+	value;
+);
+function control_dial_left_jph(value, range_low, range_high, curve_bias, default) (
+	uix_control_dial_jph(value, range_low, range_high, curve_bias, 1, default, 1);
+);
+function control_dial_left_jph(value, range_low, range_high, curve_bias) (
+	uix_control_dial_jph(value, range_low, range_high, curve_bias, 0, 0, 1);
+);
+function control_dial_left_jph(value, range_low, range_high) (
+	control_dial_left_jph(value, range_low, range_high, 0);
+);
+
+function fixed_dial(value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) local (value, default, low, high, bias, label, formatvalue, format, size, push ,textsize) (
+  ui_push();
+    ui_push_width(size);
+      value = control_dial_left_jph(value, low, high, bias);
+      uix_click(1) && uix_clickwasinside(1) && mouse_cap == 1 ? (
+          value+=1);
+      uix_click(2) && uix_clickwasinside(2) && mouse_cap == 2 ? (
+          value-=1);
+      value < low ? (
+          value = low);
+      value > high ? (
+          value = high);
+    ui_pop();
+    ui_push_above(push);
+      ui_font(#face, textsize, 0, 0);
+      ui_text(label);
+    ui_pop();
+    ui_push_below(push);
+      ui_font(#face, textsize, 0, 0);
+      value = control_hidden_textnumber(value, formatvalue, format);
+    ui_pop();
+    mouse_cap == 64 && uix_clickwasinside(64) ? (
+      value = default;
+    );
+  ui_pop();
+  floor(value);
+);
+
 function labelled_meter(value, low, high, bias, label, formatvalue, format, default) local (value, low, high, bias, label, formatvalue, format, default) (
   ui_push();
     ui_align(-1,0.4);
@@ -165,6 +266,36 @@ function labelled_meter(value, low, high, bias, label, formatvalue, format, defa
       value = default;
     );
   ui_pop();
+  value;
+);
+
+function labelled_meter2(value, low, high, bias, label, formatvalue, format, default) local (value, low, high, bias, label, formatvalue, format, default) (
+    ui_push();
+        value = control_slider_left(value, low, high, bias);
+        uix_control_color_from_theme(151, 30);
+        gfx_line(ui_right()-ui_width()/5,ui_bottom()-ui_height()/3,ui_right()-ui_width()/5,ui_top()+ui_height()/3);
+        gfx_line(ui_right()-(ui_width()/5)*2,ui_bottom()-ui_height()/3,ui_right()-(ui_width()/5)*2,ui_top()+ui_height()/3);
+        gfx_line(ui_right()-(ui_width()/5)*3,ui_bottom()-ui_height()/3,ui_right()-(ui_width()/5)*3,ui_top()+ui_height()/3);
+        gfx_line(ui_right()-(ui_width()/5)*4,ui_bottom()-ui_height()/3,ui_right()-(ui_width()/5)*4,ui_top()+ui_height()/3);
+        
+        gfx_x = ui_right()-ui_width()/5; 
+        gfx_y = ui_top()+ui_height()/2.5;
+        gfx_drawnumber(-40,0);
+        
+        gfx_x = ui_right()-(ui_width()/5)*2; 
+        gfx_y = ui_top()+ui_height()/2.5;
+        gfx_drawnumber(-30,0);
+        
+        gfx_x = ui_right()-(ui_width()/5)*3; 
+        gfx_y = ui_top()+ui_height()/2.5;
+        gfx_drawnumber(-20,0);
+        
+        gfx_x = ui_right()-(ui_width()/5)*4; 
+        gfx_y = ui_top()+ui_height()/2.5;
+        gfx_drawnumber(-10,0);
+        
+    ui_pop();
+        //value = control_hidden_textnumber(value, formatvalue, format);
   value;
 );
 
@@ -242,6 +373,24 @@ function labelled_switch_mid(value, label0, label1) local (value, label0, label1
        ) : (
                     ui_text(label1);
        );
+       value;
+);
+
+function labelled_switch_sp(value, label0, label1) local (value, label0, label1) (
+       ui_push_height(15);
+              ui_push_width(30);
+              ui_align(.5,-0.5);
+                     value = control_switch(value);
+              ui_pop();
+       ui_pop();
+       ui_font(#face, 10, 0, 0);
+       ui_push_below(10);
+       value == 0 ? (
+                    ui_text(label0);
+       ) : (
+                    ui_text(label1);
+       );
+       ui_pop();
        value;
 );
 
@@ -1003,3 +1152,138 @@ gbuf+=histsize;
 control_finish_technical();
 ui_border(); 
 );
+
+function torad(value) local (pi, value) 
+instance (this) (
+pi = 3.14159;
+this = value*(pi/180);
+);
+
+function draw_verbs(length, predelay, size, feedback) local (scale, length, size, predelay, feedback, width, height, left, top, bottom) (
+uix_control_color_from_theme(151, 30);  
+bottom = ui_bottom();
+top = ui_top();
+width = ui_width();
+height = ui_height();
+left = ui_left();
+
+scale1 = 1/min(width,height);
+scale2 = min(width,height);
+
+//size
+gfx_circle(left+width/2,bottom-height/2,size/scale1,0,1);
+//feedback
+gfx_r = 1; gfx_g = 0; gfx_b = 0.5;
+gfx_circle(left+width/2,bottom-height/2,feedback/scale1,0,1);
+//length
+gfx_r = 0; gfx_g = 0.7; gfx_b = 1;
+gfx_arc(left+width/2,bottom-length*scale2,0.2/scale1,rad1.torad(45),-rad1);
+//pre
+gfx_r = 1; gfx_g = 1; gfx_b = 0;
+gfx_arc(left+width/2,bottom-predelay*scale2,0.2/scale1,rad1.torad(45),-rad1);
+
+control_finish_technical();
+ui_border(); 
+);
+
+function blackkeys() (
+uix_control_color_from_theme(125, 30);
+gfx_rect(ui_left()+ui_width()/2,ui_top(),ui_width()*0.75,ui_height()/1.5)
+);
+
+function blackkeys2() (
+uix_control_color_from_theme(125, 30);
+gfx_rect(ui_left()+ui_width()/1.5,ui_top(),ui_width()*0.75,ui_height()/1.5)
+);
+
+function blackkeys3() (
+uix_control_color_from_theme(125, 30);
+gfx_rect(ui_left()+ui_width()/1.25,ui_top(),ui_width()*0.75,ui_height()/1.5)
+);
+
+function notedot(r,g,b,h,l,a) local (r,g,b,h,a,scale1) (
+gfx_r=r; gfx_g=g; gfx_b=b;
+gfx_a= a = a*4;
+gfx_a > 1 ? gfx_a = 1;
+scale1 = min(ui_width(),ui_height());
+gfx_circle(ui_left()+ui_width()/l, ui_bottom()-ui_height()/h,0.15*scale1,1);
+);
+
+function note_initAtt(value,note,r,g,b,h,l,vol) 
+    local (value,higher,note,r,g,b,h,l,vol) (
+    note >= value-(12*3) && note < value-(12*3)+1 || 
+    note >= value-(12*2) && note < value-(12*2)+1 || 
+    note >= value-(12) && note < value-(12)+1 || 
+    note >= value && note < value+1 || 
+    note >= value+(12) && note < value+(12+1) ||
+    note >= value+(12*2) && note < value+(12*2+1) ||
+    note >= value+(12*3) && note < value+(12*3+1) ||
+    note >= value+(12*4) && note < value+(12*4+1) ||
+    note >= value+(12*5) && note < value+(12*5+1) ? notedot(r,g,b,h,l,vol);
+);
+    
+function note_drawAtt(n,h,l,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans) 
+local (n,h,l,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans) (
+    note_initAtt(n,note1+trans,0,0.7,0.3,h,l,vol1);
+    note_initAtt(n,note2+trans,1,0.5,0.5,h,l,vol2);
+    note_initAtt(n,note3+trans,0.7,1,0.3,h,l,vol3);
+    note_initAtt(n,note4+trans,0.7,0.7,0.7,h,l,vol4);
+    note_initAtt(n,note5+trans,0.2,0.5,0.7,h,l,vol5);
+);
+
+function draw_pianobuttons(note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans)
+local (note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans) (
+control_finish_technical();
+ui_border();
+
+uix_control_color_from_theme(151, 30);
+gfx_rect(ui_left(),ui_top(),ui_width(),ui_height());
+
+uix_control_color_from_theme(125, 30);
+
+ui_split_leftratio(1/7);
+    //C
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+    blackkeys();
+    note_drawAtt(0,8,2,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+    //C#
+    note_drawAtt(1,2,1.16,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+ui_split_next();
+    //D
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+    blackkeys2();
+    note_drawAtt(2,8,2,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+    //D#
+    note_drawAtt(3,2,1,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+ui_split_next();
+    //E
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+    note_drawAtt(4,8,2,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+ui_split_next();
+    //F
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+    blackkeys();
+    note_drawAtt(5,8,2,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+    //F#
+    note_drawAtt(6,2,1.16,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+ui_split_next();
+    //G
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+    blackkeys2();
+    note_drawAtt(7,8,2,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+    //G#
+    note_drawAtt(8,2,1,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+ui_split_next();
+    //A
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+    blackkeys3();
+    note_drawAtt(9,8,2,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+    //A#
+    note_drawAtt(10,2,0.875,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+ui_split_next();
+    //H
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+    note_drawAtt(11,8,2,note1,note2,note3,note4,note5,vol1,vol2,vol3,vol4,vol5,trans);
+ui_pop();
+);
+
