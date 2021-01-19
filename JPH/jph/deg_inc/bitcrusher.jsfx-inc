@@ -1,0 +1,47 @@
+//Witti BITCRUSHER
+
+@init
+
+function bitcrushslider() (
+step = 1/2^(slider4);
+normfreq = (slider5/srate);
+filter = max(min(1-slider6*0.01,1),0.01);
+);
+
+function bitcrushsample() (
+inputA = spl0;
+inputB = spl1;
+
+phasorA = phasorA+normfreq;
+(phasorA >= 1) ? (
+phasorA = phasorA - 1;
+lastA = step * floor( inputA/step + 0.5 );
+);
+
+phasorB = phasorB+normfreq;
+(phasorB >= 1) ? (
+phasorB = phasorB - 1;
+lastB = step * floor( inputB/step + 0.5 );
+);
+
+fa = fa + filter * ((lastA-inputA) + inputA - fa);
+fb = fb + filter * ((lastB-inputB) + inputB - fb);
+
+spl0 = fa;
+spl1 = fb;
+);
+
+function bitcrushgfx() (
+        ui_split_leftratio(1/3);
+            ui_automate(slider4, labelled_dial(slider4, 16, 1, 16, 0, "bit reduction", slider4, "%.i", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 22050, 100, 22050, 0, "freq reduction", slider5, "%.i Hz", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider6, labelled_dial(slider6, 0, 0, 100, 0, "filter", slider6, "%.i %%", 50,50,12));
+        ui_pop();
+
+);

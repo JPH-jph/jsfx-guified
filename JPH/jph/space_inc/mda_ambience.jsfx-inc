@@ -1,0 +1,97 @@
+//witti
+
+
+@init
+
+function ambienceinit() (
+buf1 = 1024*1;
+buf2 = 1024*2;
+buf3 = 1024*3;
+buf4 = 1024*4;
+
+memset(buf1, 0, 1024*1);
+memset(buf2, 0, 1024*2);
+memset(buf3, 0, 1024*3);
+memset(buf4, 0, 1024*4);
+
+fil = 0;
+pos = 0;
+);
+
+function ambienceslider() (
+fParam0 = slider1; //size
+fParam1 = slider2; //feedback
+fParam2 = slider3; //hf
+fParam3 = 1; //mix
+fParam4 = 0.5; //output
+
+size = 1 + 1.6 * fParam0;
+fbak = 0.5 + fParam1 * 0.2;
+
+damp = 1 - (0.05 + 0.9 * fParam2);
+mix = pow(10, 2 * fParam4 - 1);
+dry = mix - fParam3 * fParam3 * mix;
+wet = (0.4 + 0.4) * fParam3 * mix;
+);
+
+function ambiencesample() (
+f=fil;
+
+d1 = (pos + (107 * size)) & 1023; //107
+d2 = (pos + (139 * size)) & 1023; //142
+d3 = (pos + (277 * size)) & 1023; //277
+d4 = (pos + (379 * size)) & 1023; //379
+
+a = spl0;
+b = spl1;
+
+f += damp * (wet * (a + b) - f); //hf damping
+r = f;
+
+t = buffer[buf1 + pos];
+r -= fbak * t;
+buffer[buf1 + d1] = r; //allpass
+r += t;
+
+t = buffer[buf2 + pos];
+r -= fbak * t;
+buffer[buf2 + d2] = r; //allpass
+r += t;
+
+t = buffer[buf3 + pos];
+r -= fbak * t;
+buffer[buf3 + d3] = r; //allpass
+r += t;
+c = dry * a + r - f; //left output
+
+t = buffer[buf4 + pos];
+r -= fbak * t;
+buffer[buf4 + d4] = r; //allpass
+r += t;
+d = dry * b + r - f; //right output
+
+pos+=1; pos&=1023;
+d1+=1; d1&=1023;
+d2+=1; d2&=1023;
+d3+=1; d3&=1023;
+d4+=1; d4&=1023;
+
+spl0 = c;
+spl1 = d;
+
+(abs(f)>0.0000000001) ? ( fil=f; ):( fil=0; ); //catch denormals
+);
+
+function ambiencegfx() (
+    ui_split_leftratio(0.6);
+        ui_split_leftratio(1/3);
+            ui_automate(slider1, labelled_dial(slider1, 0.5, 0, 1, 0, "size", 100 * slider1, "%.1f %%", 50,50,12));
+        ui_split_next();
+            ui_automate(slider2, labelled_dial(slider2, 0.5, 0, 1, 0, "feedback", 100 * slider2, "%.1f %%", 50,50,12));
+        ui_split_next();
+            ui_automate(slider3, labelled_dial(slider3, 0.5, 0, 1, 0, "damp", 100 * slider3, "%.1f %%", 50,50,12));
+        ui_pop();
+    ui_pop();
+    
+        draw_verbs(0,0,slider1*0.45,slider2*0.45);
+);

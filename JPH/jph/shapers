@@ -102,6 +102,44 @@ freemem = bufferpeak + bufferlength;
 freemem = ui_setup(freemem); // returns the first index it's not using
 ///////////////////////
 
+//eventhorizon
+pi = 3.1415926535;
+log2db = 8.6858896380650365530225783783321; // 20 / ln(10)
+db2log = 0.11512925464970228420089957273422; // ln(10) / 20
+
+//hard
+  // Buffer for upsampled samples
+  ups = 100000;
+
+  // Fixed 4x oversampling
+  ovsRate = srate * 4;
+  
+  upFilterL.bwLP(22050, ovsRate, 2, 200000);
+  upFilterR.bwLP(22050, ovsRate, 2, 201000);
+  
+  dnFilterL.bwLP(22000, ovsRate, 4, 202000);
+  dnFilterR.bwLP(22000, ovsRate, 4, 203000);
+  
+//odd
+dc0.init_HP6(7/srate);
+dc1.init_HP6(7/srate);
+
+//soft
+orderUp = 1;
+orderDn = 1;
+
+//multi
+//fir restoration
+c1 = 1;
+c2 = -0.75;
+c3 = 0.17;
+fgain = 4.1;
+
+//fir bandlimit
+bl_c1 = 0.52;
+bl_c2 = 0.54;
+bl_c3 = -0.02;
+
 draw_wavescopeinit();
 
 function slider_update()
@@ -109,20 +147,6 @@ function slider_update()
 needs_slider_update=0;
 
 outgain = 10^(slider62/20);
-
-slider64 == 0 ? (
-eventhorizoninit();
-) : slider64 == 1 ? (
-hardinit();
-) : slider64 == 2 ? (
-smoothinit();
-) : slider64 == 3 ? (
-softinit();
-) : slider64 == 6 ? (
-multiinit();
-) : slider64 == 8 ? (
-oddinit();
-);
 
 slider64 == 0 ? ( 
 eventhorizonslider();
@@ -166,11 +190,10 @@ slider63 < 1 ? (
 needs_slider_update=1;
 
 @block
-
+needs_slider_update ? slider_update();
 slider64 == 9 ? (
 tanhblock();
 );
-needs_slider_update ? slider_update();
 
 @sample
 slider64 == 0 ? (

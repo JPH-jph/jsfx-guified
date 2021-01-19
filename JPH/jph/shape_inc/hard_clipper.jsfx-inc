@@ -64,20 +64,6 @@
     output;
   );
 
-function hardinit()(
-  // Buffer for upsampled samples
-  ups = 100000;
-
-  // Fixed 4x oversampling
-  ovsRate = srate * 4;
-  
-  upFilterL.bwLP(22050, ovsRate, 2, 200000);
-  upFilterR.bwLP(22050, ovsRate, 2, 201000);
-  
-  dnFilterL.bwLP(22000, ovsRate, 4, 202000);
-  dnFilterR.bwLP(22000, ovsRate, 4, 203000);  
-);
-
 function hardslider()(
   ceiling = dBToGain(dBCeil);
   gain    = dBToGain(dBGain);

@@ -53,7 +53,7 @@ slider41:0<0,5,1>-Theme
 slider42:1<0,3,1>-Cut
 
 //////////////////////////////////////////
-import rbj_filter.jsfx-inc
+import /inc/rbj_filter.jsfx-inc
 import ../ui-lib/ui-lib.jsfx-inc
 import ../ui-lib/ui-lib-compat.jsfx-inc
 filename:0,../ui-lib/bitmap/theme-dark-orange.png

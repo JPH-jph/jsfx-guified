@@ -1,0 +1,250 @@
+//cook
+
+@init
+function memalloc(size)
+(
+    __memory_index = __memory_next + 8;
+    __memory_next = __memory_index + size;
+    memset(__memory_index, 0.0, size);
+    __memory_index;
+);
+
+function memalloc(size, noreinit)
+(
+    noreinit == 0 ? (
+        __memory_index = __memory_next + 8;
+        __memory_next = __memory_index + size;
+        memset(__memory_index, 0.0, size);
+    ) : (
+        __memory_index = __memory_next + 8;
+        __memory_next = __memory_index + size;
+    );
+    __memory_index;
+);
+
+function delay(size)
+(
+    this.buf = memalloc(size);
+    this.size = size;
+    this.curpos = 0;
+    this.curval = 0;
+);
+
+function delay_fread2(delay)
+(
+    pos_ = this.curpos - delay;
+    pos_ < 0 ? pos_ += this.size;
+    ip_ = floor(pos_);
+    this.curval = this.buf[ip_] + (this.buf[ip_+1] - this.buf[ip_]) * (pos_ - ip_);
+    this.curval;
+);
+
+function delay_write(signal)
+(
+    this.buf[this.curpos] = signal;
+    this.buf[this.size] = this.buf[0];
+    this.buf[this.size+1] = this.buf[1];
+    this.buf[-1] = this.buf[this.size-1];
+    this.curpos += 1;
+    this.curpos == this.size ? this.curpos = 0;
+);
+
+function random(mini maxi freq mode)
+(
+    mode = floor(mode);
+    mode < 0 ? mode = 0 : mode > 1 ? mode = 1;
+    this.mode = mode;
+    mini > maxi ? (
+        tmp_ = mini; mini = maxi; maxi = tmp_;
+    );
+    this.mini = mini; 
+    this.maxi = maxi; 
+    this.freq = abs(freq);
+    this.range = this.maxi - this.mini;
+    this.inc = this.freq / srate; 
+    this.diff = this.val = this.oldval = 0;
+    this.time = 1.0;
+);
+
+function random_do()
+(
+    this.time += this.inc;
+    this.time >= 1 ? (
+        this.time -= 1;
+        this.oldval = this.val;
+        this.val = this.range * rand(1) + this.mini;
+        this.diff = this.val - this.oldval;
+    );
+    this.mode == 0 ? (
+        this.oldval + this.diff * this.time;
+    ) : (
+        this.val;
+    );
+);
+
+function _wgverb_init()
+(
+    r1_ = 0.001 * srate / 4;
+    r2_ = 0.0011 * srate / 4;
+    r3_ = 0.0017 * srate / 4;
+    r4_ = 0.0006 * srate / 4;
+    r5_ = 0.0013 * srate / 4;
+    r6_ = 0.0009 * srate / 4;
+    r7_ = 0.0016 * srate / 4;
+    r8_ = 0.0005 * srate / 4;
+    this.r1.random(-r1_, r1_, 1.51, 0);
+    this.r2.random(-r2_, r2_, 2.5, 0);
+    this.r3.random(-r3_, r3_, 0.911, 0);
+    this.r4.random(-r4_, r4_, 2.473, 0);
+    this.r5.random(-r5_, r5_, 1.141, 0);
+    this.r6.random(-r6_, r6_, 0.497, 0);
+    this.r7.random(-r7_, r7_, 0.391, 0);
+    this.r8.random(-r8_, r8_, 1.621, 0);
+    this.t1 = 2473 * (srate / 44100.);
+    this.t2 = 2767 * (srate / 44100.);
+    this.t3 = 3217 * (srate / 44100.);
+    this.t4 = 3557 * (srate / 44100.);
+    this.t5 = 3907 * (srate / 44100.);
+    this.t6 = 4127 * (srate / 44100.);
+    this.t7 = 2143 * (srate / 44100.);
+    this.t8 = 1933 * (srate / 44100.);
+    this.d1.delay(ceil(this.t1 + 0.002 * srate));
+    this.d2.delay(ceil(this.t2 + 0.002 * srate));
+    this.d3.delay(ceil(this.t3 + 0.002 * srate));
+    this.d4.delay(ceil(this.t4 + 0.002 * srate));
+    this.d5.delay(ceil(this.t5 + 0.002 * srate));
+    this.d6.delay(ceil(this.t6 + 0.002 * srate));
+    this.d7.delay(ceil(this.t7 + 0.002 * srate));
+    this.d8.delay(ceil(this.t8 + 0.002 * srate));
+);
+
+function wgverb(feed cutoff bal)
+(
+    this.ny = srate / 2;
+    feed < 0 ? feed = 0 : feed > 1 ? feed = 1;
+    this.feed = feed;
+    cutoff < 20 ? cutoff = 20 : cutoff > this.ny ? cutoff = this.ny;
+    this.cutoff = cutoff;
+    bal < 0 ? bal = 0 : bal > 1 ? bal = 1;
+    this.bal = bal;
+
+    this.c2 = exp(-2 * $pi * this.cutoff / srate);
+    this.ys = memalloc(8);
+    this._wgverb_init();
+    this.total = 0.0;
+);
+
+function wgverb_set_feed(feed)
+(
+    feed < 0 ? feed = 0 : feed > 1 ? feed = 1;
+    this.feed = feed;
+);
+
+function wgverb_set_cutoff(cutoff)
+(
+    cutoff < 20 ? cutoff = 20 : cutoff > this.ny ? cutoff = this.ny;
+    this.cutoff = cutoff;
+    this.c2 = exp(-2 * $pi * this.cutoff / srate);
+);
+
+function wgverb_set_bal(bal)
+(
+    bal < 0 ? bal = 0 : bal > 1 ? bal = 1;
+    this.bal = bal;
+);
+
+function wgverb_do(signal)
+(
+    junc_ = this.total * 0.25;
+    this.total = 0.0;
+
+    v_ = this.d1.delay_fread2(this.t1 + this.r1.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[0] - v_) * this.c2;
+    this.total += v_;
+    this.d1.delay_write(signal + junc_ - this.ys[0]);
+    this.ys[0] = v_;
+
+    v1_ = this.d2.delay_fread2(this.t2 + this.r2.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[1] - v_) * this.c2;
+    this.total += v_;
+    this.d2.delay_write(signal + junc_ - this.ys[1]);
+    this.ys[1] = v_;
+
+    v_ = this.d3.delay_fread2(this.t3 + this.r3.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[2] - v_) * this.c2;
+    this.total += v_;
+    this.d3.delay_write(signal + junc_ - this.ys[2]);
+    this.ys[2] = v_;
+
+    v_ = this.d4.delay_fread2(this.t4 + this.r4.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[3] - v_) * this.c2;
+    this.total += v_;
+    this.d4.delay_write(signal + junc_ - this.ys[3]);
+    this.ys[3] = v_;
+
+    v_ = this.d5.delay_fread2(this.t5 + this.r5.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[4] - v_) * this.c2;
+    this.total += v_;
+    this.d5.delay_write(signal + junc_ - this.ys[4]);
+    this.ys[4] = v_;
+
+    v_ = this.d6.delay_fread2(this.t6 + this.r6.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[5] - v_) * this.c2;
+    this.total += v_;
+    this.d6.delay_write(signal + junc_ - this.ys[5]);
+    this.ys[5] = v_;
+
+    v_ = this.d7.delay_fread2(this.t7 + this.r7.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[6] - v_) * this.c2;
+    this.total += v_;
+    this.d7.delay_write(signal + junc_ - this.ys[6]);
+    this.ys[6] = v_;
+
+    v_ = this.d8.delay_fread2(this.t8 + this.r8.random_do());
+    v_ *= this.feed;
+    v_ += (this.ys[7] - v_) * this.c2;
+    this.total += v_;
+    this.d8.delay_write(signal + junc_ - this.ys[7]);
+    this.ys[7] = v_;
+
+    rev_ = this.total * 0.25;
+    signal + (rev_ - signal) * this.bal;
+);
+
+revL.wgverb(slider20, slider21, slider22);
+revR.wgverb(slider20, slider21, slider22);
+
+function cookslider() (
+revL.wgverb_set_feed(slider20);
+revR.wgverb_set_feed(slider20);
+revL.wgverb_set_cutoff(slider21);
+revR.wgverb_set_cutoff(slider21);
+revL.wgverb_set_bal(slider22);
+revR.wgverb_set_bal(slider22);
+);
+
+function cooksample() (
+spl0 = revL.wgverb_do(spl0) * 1;
+spl1 = revR.wgverb_do(spl1) * 1;
+);
+
+function cookgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_leftratio(1/3);
+            ui_automate(slider20, labelled_dial(slider20, 0.75, 0, 1, 0, "feedback", 100*slider20, "%.1f %%", 50,50,12));
+        ui_split_next();
+            ui_automate(slider21, labelled_dial(slider21, 5000, 200, 10000, 0, "cutoff", slider21, "%.i Hz", 50,50,12));
+        ui_split_next();
+            ui_automate(slider22, labelled_dial(slider22, 0.24, 0, 1, 0, "mix", 100*slider22, "%.1f %%", 50,50,12));
+        ui_pop();
+    ui_pop();
+    
+        draw_verbs(0,0,0.45,slider20*0.45);
+);

@@ -1,39 +1,26 @@
 @init
 
-function msfilterinit() (
-itm1=itm2=otm1=otm2=0;
-
-z = 0;
-z0 = 0;
-z1 = 0;
-
-src_a = tgt_a = slider18*0.01;
-src_b = tgt_b = 1 - slider18*0.01;
-
-src_out = tgt_out = 10^(slider32/20);
-);
-
 function msfilterslider() (
-tgt_a = slider18*0.01;
-tgt_b = 1 - slider18*0.01;
+ms_tgt_a = slider18*0.01;
+ms_tgt_b = 1 - slider18*0.01;
 
 mode = slider19;
 
-tgt_out = 10^(0/20);
+ms_tgt_out = 10^(0/20);
 );
 
 function msfilterblock() (
-d_a = (tgt_a-src_a)/samplesblock;
-ta = src_a;
-src_a = tgt_a;
+d_a = (ms_tgt_a-ms_src_a)/samplesblock;
+ta = ms_src_a;
+ms_src_a = ms_tgt_a;
 
-d_b = (tgt_b-src_b)/samplesblock;
-tb = src_b;
-src_b = tgt_b;
+d_b = (ms_tgt_b-ms_src_b)/samplesblock;
+tb = ms_src_b;
+ms_src_b = ms_tgt_b;
 
-d_out = (tgt_out-src_out)/samplesblock;
-tout = src_out;
-src_out = tgt_out;
+d_out = (ms_tgt_out-ms_src_out)/samplesblock;
+tout = ms_src_out;
+ms_src_out = ms_tgt_out;
 );
 
 function msfiltersample() (
@@ -50,74 +37,74 @@ mode==0 ?(
 //lowpass
 in0 = spl0;
 in1 = spl1;
-z0 = (in0 * b) + (z0 * a);
-z1 = (in1 * b) + (z1 * a);
-spl0 = z0;
-spl1 = z1;
+ms_ms_z0 = (in0 * b) + (ms_ms_z0 * a);
+ms_ms_z1 = (in1 * b) + (ms_ms_z1 * a);
+spl0 = ms_ms_z0;
+spl1 = ms_ms_z1;
 );
 
 mode==1 ?( 
 //lowpass mono
 in = (spl0+spl1)*0.5;
-z = (in * b) + (z * a);
-spl0 = z;
-spl1 = z;
+ms_z = (in * b) + (ms_z * a);
+spl0 = ms_z;
+spl1 = ms_z;
 );
 
 mode==2 ?( 
 //lowpass mid-signal
 in0 = (spl0-spl1)*0.5;
 in1 = (spl0+spl1)*0.5;
-z = (in1 * b) + (z * a);
-spl0 = in0 + z;
-spl1 = in0*-1 + z;
+ms_z = (in1 * b) + (ms_z * a);
+spl0 = in0 + ms_z;
+spl1 = in0*-1 + ms_z;
 );
 
 mode==3 ?( 
 //lowpass side-signal
 in0 = (spl0-spl1)*0.5;
 in1 = (spl0+spl1)*0.5;
-z = (in0 * b) + (z * a);
-spl0 = in1 + z;
-spl1 = in1 + z*-1;
+ms_z = (in0 * b) + (ms_z * a);
+spl0 = in1 + ms_z;
+spl1 = in1 + ms_z*-1;
 );
 
 mode==4 ?( 
 //highpass
 in0 = spl0;
 in1 = spl1;
-z0 = (in0 * b) + (z0 * a);
-z1 = (in1 * b) + (z1 * a);
-spl0 = in0 - z0;
-spl1 = in1 - z1;
+ms_ms_z0 = (in0 * b) + (ms_ms_z0 * a);
+ms_ms_z1 = (in1 * b) + (ms_ms_z1 * a);
+spl0 = in0 - ms_ms_z0;
+spl1 = in1 - ms_ms_z1;
 );
 
 mode==5 ?( 
 //highpass mono
 in = (spl0+spl1)*0.5;
-z = (in * b) + (z * a);
-spl0 = in - z;
-spl1 = in - z;
+ms_z = (in * b) + (ms_z * a);
+spl0 = in - ms_z;
+spl1 = in - ms_z;
 );
 
 mode==6 ?( 
 //highpass mid-signal
 in = (spl0+spl1)*0.5;
-z = (in * b) + (z * a);
-spl0 -= z;
-spl1 -= z;
+ms_z = (in * b) + (ms_z * a);
+spl0 -= ms_z;
+spl1 -= ms_z;
 );
 
 mode==7 ?( 
 //highpass side-signal
 in = (spl0-spl1)*0.5;
-z = (in * b) + (z * a);
-spl0 -= z;
-spl1 -= z*-1;
+ms_z = (in * b) + (ms_z * a);
+spl0 -= ms_z;
+spl1 -= ms_z*-1;
 );
 
-otm1=0.999*otm1+spl0-itm1; itm1=spl0; spl0=otm1;
-otm2=0.999*otm2+spl1-itm2; itm2=spl1; spl1=otm2;
+ms_otm1=0.999*ms_otm1+spl0-ms_itm1; ms_itm1=spl0; spl0=ms_otm1;
+ms_otm2=0.999*ms_otm2+spl1-ms_itm2; ms_itm2=spl1; spl1=ms_otm2;
 
 spl0*=outgain;
 spl1*=outgain;
@@ -154,7 +141,7 @@ function msfiltergfx() (
             
         ui_split_next();
             ui_split_leftratio(1/3);
-                ui_automate(slider18, labelled_dial(slider18, 100, 0, 100, 0, "cutoff", slider18, "%i", 60,60,12)); 
+                ui_automate(slider18, labelled_dial(slider18, 0, 100, 0, 0, "cutoff", slider18, "%i", 60,60,12)); 
             ui_pop();
         
         
@@ -169,7 +156,7 @@ function msfiltergfx() (
         
         ui_split_next();
             ui_split_leftratio(1/3);
-                ui_automate(slider18, labelled_dial(slider18, 100, 0, 100, 0, "cutoff", slider18, "%i", 60,60,12)); 
+                ui_automate(slider18, labelled_dial(slider18, 0, 100, 0, 0, "cutoff", slider18, "%i", 60,60,12)); 
             ui_pop();
     );
 );

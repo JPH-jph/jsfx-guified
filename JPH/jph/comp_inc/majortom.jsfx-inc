@@ -1,0 +1,179 @@
+// Copyright 2006, Thomas Scott Stillwell
+// All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted 
+//provided that the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions 
+//and the following disclaimer. 
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions 
+//and the following disclaimer in the documentation and/or other materials provided with the distribution. 
+//
+//The name of Thomas Scott Stillwell may not be used to endorse or 
+//promote products derived from this software without specific prior written permission. 
+//
+
+
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR 
+//IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+//FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS 
+//BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+//(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+//PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+//STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF 
+//THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//tags: dynamics compressor
+//author: Stillwell
+
+@init
+
+function majorslider() (
+  thresh = slider24;
+  threshv = exp(thresh * db2log);
+  ratio = slider25;
+  softknee = slider27;
+  cthresh = (softknee ? (thresh -3) : thresh);
+  cthreshv = exp(cthresh * db2log);
+  sidechain = slider28;
+  automakeup = slider29;
+  automakeup ? (
+    autogain = (abs(thresh) - (abs(thresh)/max(1,ratio-1)))/2;
+  ) : (
+    autogain = 0;
+  );
+  makeup = slider26;
+  makeupv = exp((makeup+autogain) * db2log);
+  RMSdet = slider30;
+  RMSdet ? (
+    rmscoef=exp(-1000/(10 * srate));       // 10 ms RMS window
+  ) : (
+    rmscoef=exp(-1000/(0.0025 * srate));  // 2.5 us Peak detector
+  );
+  opto = slider31;
+);
+
+function majorsample() (
+  sidechain ? (
+    aspl0 = abs(spl2);
+    aspl1 = abs(spl3);
+  ) : (
+    opto ? (
+      ospl = ospl0 * ospl0 + ospl1 * ospl1;
+      ospl > runospl ? (
+        runospl = ospl + atcoef * (runospl - ospl);
+      ) : (
+        runospl = ospl + relcoef * (runospl - ospl);
+      );
+      ospl = sqrt(max(0,runospl));
+
+//      ospl = 2.08136898 * log(ospl)*log2db;
+//      ospl = ospl - 6;            // reduce feedback to -6 dB
+//      ospl = exp(ospl * db2log);
+      ospl *= 0.5;
+
+      aspl0 = abs(ospl);
+      aspl1 = abs(ospl);
+    ) : (
+      aspl0 = abs(spl0);
+      aspl1 = abs(spl1);
+    );
+  );
+
+  RMSDet ? (  
+    ave = (aspl0 * aspl0) + (aspl1 * aspl1);
+    runave = ave + rmscoef * (runave - ave);
+    det = sqrt(max(0,runave));
+  ) : (
+    maxspl = max(aspl0, aspl1);
+    maxspl = maxspl * maxspl;
+    runave = maxspl + rmscoef * (runave - maxspl);
+    det = sqrt(max(0,runave));
+  );
+  overdb = 2.08136898 * log(det/cthreshv) * log2db;
+  overdb > maxover ? (
+    maxover = overdb;
+    attime = attimes2[max(0,floor(abs(overdb)))];   // attack time per formula
+    atcoef = exp(-1/(attime * srate));
+    reltime = overdb / 125;                        // release at constant 125 dB/sec.
+    relcoef = exp(-1/(reltime * srate));
+  );
+  overdb = max(0,overdb);
+
+  overdb > rundb ? (
+    rundb = overdb + atcoef * (rundb - overdb);
+  ) : (
+    rundb = overdb + relcoef * (rundb - overdb);
+  );
+  overdb = rundb;
+
+  cratio = (softknee ? (1 + (ratio-1) * min(overdb, 6) / 6) : ratio);
+  
+  gr = -overdb * (cratio-1)/cratio;
+  grv = exp(gr * db2log);
+  
+  slider60 = gr;
+  
+  runmax = maxover + relcoef * (runmax - maxover);  // highest peak for setting att/rel decays in reltime
+  maxover = runmax;
+
+  spl0 *= grv * makeupv;
+  spl1 *= grv * makeupv;  
+
+  ospl0 = spl0;
+  ospl1 = spl1;
+);
+
+function majorgfx() (
+ui_split_topratio(0.4);
+    control_group("");
+        ui_split_leftratio(1/3);
+            ui_automate(slider24, labelled_dial(slider24, 0, -60, 0, 0, "threshold", slider24, "%.1f dB", 50, 50, 12));
+        ui_split_next();
+            ui_automate(slider25, labelled_dial(slider25, 1, 1, 20, 0, "ratio",slider25, "%.1f" , 50, 50, 12));
+        ui_split_next();
+            ui_automate(slider26, labelled_dial(slider26, 0, -20, 20, 0, "gain", slider26, "%.1f dB", 50, 50, 12));
+        ui_pop();   
+
+ui_split_next();
+control_group("");
+    ui_split_leftratio(0.20);
+    uix_control_color_from_theme(151, 30);
+    gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+            ui_split_topratio(1/2);
+                ui_automate(slider27, multipleway_switch_mid(slider27, "hard", 0, 20, 10));
+            ui_split_next();
+                ui_automate(slider27, multipleway_switch_mid(slider27, "soft", 1, 20, 10));
+            ui_pop();
+            
+        ui_split_next();
+        gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+            ui_split_topratio(1/2);
+                ui_automate(slider28, multipleway_switch_mid(slider28, "normal", 0, 20, 10));
+            ui_split_next();
+                ui_automate(slider28, multipleway_switch_mid(slider28, "sc", 1, 20, 10));
+            ui_pop();
+        ui_split_next();
+        gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+                ui_automate(slider29, oneway_switch_midb(slider29, "autogain", 20, 10));
+        ui_split_next();
+        gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+            ui_split_topratio(1/2);
+                ui_automate(slider30, multipleway_switch_mid(slider30, "peak", 0, 20, 10));
+            ui_split_next();
+                ui_automate(slider30, multipleway_switch_mid(slider30, "rms", 1, 20, 10));
+            ui_pop();
+        ui_split_next();
+            ui_split_topratio(1/2);
+                ui_automate(slider31, multipleway_switch_mid(slider31, "ffwd", 0, 20, 10));
+            ui_split_next();
+                ui_automate(slider31, multipleway_switch_mid(slider31, "fbck", 1, 20, 10));
+            ui_pop();
+    ui_pop();
+
+ui_split_next();
+control_group("");
+ui_automate(slider60, labelled_meter2(slider60, 0, -50, 0, "output", slider60, "%.1f dB", 0));
+        
+ui_pop();
+);

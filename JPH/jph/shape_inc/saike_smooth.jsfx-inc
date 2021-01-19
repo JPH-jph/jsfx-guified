@@ -86,12 +86,7 @@
       ic2eq = 2*v2 - ic2eq;    
       
       (v0 + m1 * v1 + m2 * v2)
-    ); 
-
-function smoothinit() (
-dc0.init_HP6(7/srate);
-dc1.init_HP6(7/srate);
-);
+    );
 
 function smoothslider() (
 log10d20_conversion = .11512925464970228420089957273422; //log(10)/20;

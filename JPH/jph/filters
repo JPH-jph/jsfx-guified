@@ -107,25 +107,68 @@ freemem = bufferpeak + bufferlength;
 freemem = ui_setup(freemem); // returns the first index it's not using
 ///////////////////////
 
+//cheby
+cheby_cDenorm = 0;
+cheby_mv=2^(-0.2/6);
+cheby_e = 2.718281828459045;
+pi = 3.141592653589793;
+cheby_cutoff = 20000;
+
+//moog
+moog_cDenorm = 10^-30;
+moog_mv=2^(-0.2/6);
+moog_fs = srate;
+
+moog_c1 = 1;
+moog_c2 = -0.75;
+moog_c3 = 0.17;
+moog_fgain = 5;
+
+moog_bl_c1 = 0.52;
+moog_bl_c2 = 0.54;
+moog_bl_c3 = -0.02;
+
+//ms
+ms_itm1=ms_itm2=ms_otm1=ms_otm2=0;
+ms_z = 0;
+ms_z0 = 0;
+ms_z1 = 0;
+ms_src_a = ms_tgt_a = slider18*0.01;
+ms_src_b = ms_tgt_b = 1 - slider18*0.01;
+ms_src_out = ms_tgt_out = 10^(slider32/20);
+
+//ms20
+bpos=0;
+
+cutoff_mem  = 0;
+reso_mem    = 10000;
+sinc_hist1  = 20000;
+sinc_hist2  = 30000;
+sinc_flt    = 40000;
+sinc_flt2   = 50000;
+sinc_flt3   = 60000;
+sinc_flt4   = 70000;
+sinc_tmp    = 80000;
+
+//rc
+dry.smooth = 0;
+wet.smooth = 1;
+min_fc = 1/60;
+
+//zdf
+r2.smooth = cl.smooth = 1;
+cb.smooth = ch.smooth = 0;
+
+dry.smooth = 0;
+wet.smooth = 1;
+
+min_fc = 1/60;
+
 function slider_update()
 (
 needs_slider_update=0;
 
 outgain = 10^(slider61/20);
-
-slider64 == 2 ? (
-cheby24init();
-) : slider64 == 3 ? (
-moog24init();
-) : slider64 == 4 ? (
-msfilterinit();
-) : slider64 == 6 ? (
-ms20init();
-) : slider64 == 7 ? (
-rcinit();
-) : slider64 == 8 ? (
-zdfinit();
-);
 
 slider64 == 1 ? ( 
 apple12slider();

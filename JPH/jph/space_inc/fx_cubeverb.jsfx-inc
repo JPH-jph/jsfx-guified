@@ -1,0 +1,93 @@
+desc:fx_cubeverb :: ccernn.2009 :: v0.0.1
+// This effect Copyright (C) 2004 and later Zeven Sound Technology
+// 23/01/2005 - Added multichannel support
+// ccernn : adapted to reaper
+// desc: ZST 1-Channel Cube-type reverb #2
+
+@init
+
+function cubeinit() (
+  rp0p = 0;
+  rp1p = 0;
+  rp2p = 0;
+  splbuf_L = 0;
+  splbuf_R = 500000;
+);
+
+function cubeslider() (
+  notch1 = slider36;
+  wet    = 2^(0/6);
+  dry    = 2^(-99/6)-1;
+  phase  = cos((slider40/180)*$pi);
+  decay  = (2^(slider39/6))/3;
+  mat1   = slider37;
+  mat2   =  mat1^2;
+  mat3   = mat1^3;
+  size1  = slider38*.001;
+  size2  = (size1^2 * 2) ^ .5;
+  size3  = (size1^2 * 3) ^ .5;
+  ss0    = size1 * srate;
+  ss0h   = floor(ss0*.5);
+  ss1    = size2 * srate;
+  ss1h   = floor(ss1*.5);
+  ss2    = size3 * srate;
+  ss2h   = floor(ss2*.5);
+  rev0_L = 0;
+  rev1_L = 0;
+  rev2_L = 0;
+  rev0_R = 0;
+  rev1_R = 0;
+  rev2_R = 0;
+);
+
+function cubesample() (
+  revin_L = spl0;
+  d_L     = d_L + (revin_L-d_L) * notch1;
+  s_L     = revin_L - d_L;
+  out_L   = splbuf_L[rp0*3] + splbuf_L[rp1*3+1] + splbuf_L[rp2*3+2];
+  out2_L  = splbuf_L[(rp0+ss0h)%ss0*3] + splbuf_L[(rp1+ss1h)%ss1*3+1] + splbuf_L[(rp2+ss2h)%ss2*3+2];
+  feed_L  = out_L * decay + s_L;
+  rev0_L  += (feed_L - rev0_L) * mat1;
+  rev1_L  += (feed_L - rev1_L) * mat2;
+  rev2_L  += (feed_L - rev2_L) * mat3;
+  splbuf_L[rp0*3  ] = rev0_L;
+  splbuf_L[rp1*3+1] = rev1_L;
+  splbuf_L[rp2*3+2] = rev2_L;
+  finalmix_L = (revin_L + out2_L * phase) * wet + revin_L * dry;
+  spl0 = finalmix_L;
+  revin_R = spl1;
+  d_R     = d_R + (revin_R-d_R) * notch1;
+  s_R     = revin_R - d_R;
+  out_R   = splbuf_R[rp0*3] + splbuf_R[rp1*3+1] + splbuf_R[rp2*3+2];
+  out2_R  = splbuf_R[(rp0+ss0h)%ss0*3] + splbuf_R[(rp1+ss1h)%ss1*3+1] + splbuf_R[(rp2+ss2h)%ss2*3+2];
+  feed_R  = out_R * decay + s_R;
+  rev0_R  += (feed_R - rev0_R) * mat1;
+  rev1_R  += (feed_R - rev1_R) * mat2;
+  rev2_R  += (feed_R - rev2_R) * mat3;
+  splbuf_R[rp0*3  ] = rev0_R;
+  splbuf_R[rp1*3+1] = rev1_R;
+  splbuf_R[rp2*3+2] = rev2_R;
+  finalmix_R = (revin_R + out2_R * phase) * wet + revin_R * dry;
+  spl1 = finalmix_R;
+  (rp0 += 1) >= ss0 ? rp0 = 0;
+  (rp1 += 1) >= ss1 ? rp1 = 0;
+  (rp2 += 1) >= ss2 ? rp2 = 0;
+);
+
+function cubegfx() (
+    ui_split_leftratio(0.6);
+        ui_split_leftratio(1/5);
+            ui_automate(slider36, labelled_dial(slider36, 0.05, 0, 1, 0, "low cut", slider36, "%.2f", 50,50,12));
+        ui_split_next();
+            ui_automate(slider37, labelled_dial(slider37, .25, 0, 1, 0, "material", slider37, "%.2f", 50,50,12));
+        ui_split_next();
+            ui_automate(slider38, labelled_dial(slider38, 50, 0, 1000, 0, "size", slider38, "%.i ms", 50,50,12));
+        ui_split_next();
+            ui_automate(slider39, labelled_dial(slider39, 0, -99, 0, 0, "decay", slider39, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider40, labelled_dial(slider40, 0, 0, 180, 0, "phase", slider40, "%.i °", 50,50,12));
+        ui_pop();
+    ui_pop();
+    
+        draw_verbs(0,0,0.45,slider38*0.00045);
+);

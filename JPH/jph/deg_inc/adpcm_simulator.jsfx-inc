@@ -1,0 +1,70 @@
+//ADPCM Simulator) [COCKOS]
+//tags: processing lo-fi
+//author: Cockos 
+
+// encodes/decodes to IMA ADPCM to give it that "crunchy" sound
+
+
+@init
+
+function adpcmslider() (
+bitbias=slider3|0;
+bits = min(max(slider1|0,1),4);
+iscale = (10^(0/20))/32768;
+mask = 7;
+bits==3?mask=6;
+bits==2?mask=4;
+bits==1?mask=0;
+
+resetevery = slider2|0;
+resetevery > 65537 ? resetevery = 10^10;
+);
+
+function adpcmsample() (
+inspl0 = min(max((spl0*32768)|0,-32768),32767);
+inspl1 = min(max((spl1*32768)|0,-32768),32767);
+
+
+blockpos ? (
+  sign0=0;
+  step0 = step_table[state0];
+  adiff0 = (inspl0 - last0)|0;
+  adiff0<0 ? ( adiff0=-adiff0; sign0=8; );
+  nib0 = (min(max((step0 ? ((4 * adiff0 - ((step0*0.5)|0)) / step0) : 0)|0,0 ),7)&mask) + bitbias;
+  diff0 = ((nib0+0.5)*step0*0.25)|0;
+  outspl0 = (last0 += (sign0?-diff0:diff0));
+  state0 = min(max(state0+index_table[nib0],0),88);
+
+  sign1=0;
+  step1 = step_table[state1];
+  adiff1 = (inspl1 - last1)|0;
+  adiff1<0 ? ( adiff1=-adiff1; sign1=8; );
+  nib1 = (min(max((step1 ? ((4 * adiff1 - ((step1*0.5)|0)) / step1) : 0)|0,0 ),7)&mask) + bitbias;
+  diff1 = ((nib1+0.5)*step1*0.25)|0;
+  outspl1 = (last1 += (sign1?-diff1:diff1));
+  state1 = min(max(state1+index_table[nib1],0),88);
+) : (
+  last0 = outspl0 = inspl0;
+  last1 = outspl1 = inspl1;
+);
+
+spl0 = min(max(outspl0*iscale,-1),1);
+spl1 = min(max(outspl1*iscale,-1),1);
+
+(blockpos+=1) >= resetevery ? blockpos=0;
+);
+
+function adpcmgfx() (
+        ui_split_leftratio(1/3);
+            ui_automate(slider1, labelled_dial(slider1, 4, 1, 4, 0, "bits", slider1, "%.i", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider2, labelled_dial(slider2, 4096, 2, 65538, 0, "blocksize", slider2, "%.i", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider3, labelled_dial(slider3, 0, 0, 7, 0, "bit bias", slider3, "%.i", 50,50,12));
+        ui_pop();
+
+);

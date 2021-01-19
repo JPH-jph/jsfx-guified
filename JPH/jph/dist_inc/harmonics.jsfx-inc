@@ -4,18 +4,6 @@
 
 @init
 
-function harminit() (
-ext_nodenorm=1;
-
-// DC remove
-itm1=slider29;
-itm2=slider30;
-otm1=otm2=0;
-
-// filter
-m1=m0=0;
-);
-
 function tanh(x)
 (
 x = exp(2*x);

@@ -1,0 +1,852 @@
+// desc:jcjr_CosmoDepot
+// James Chandler Jr
+//   http://www.errnum.com
+//   errnum@gmail.com
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+
+@init
+  function js_malloc(a_size, a_clearmem)
+  local (l_result)
+  (
+    l_result = g_next_js_malloc;
+    (a_clearmem != 0) ?
+      memset(l_result, 0, a_size);
+    g_next_js_malloc += a_size;
+    l_result;
+  );
+  
+    function DB_Amplitude_To_Log2(a_DBVal) //given a dB value, calc the equivalent as raw log2 value
+  (
+    a_DBVal * DB_AMPLITUDE_TO_LOG2_MUL;
+  );
+  
+  function DB_Power_To_Log2(a_DBVal) //given a dB value, calc the equivalent as raw log2 value
+  (
+    a_DBVal * DB_POWER_TO_LOG2_MUL;
+  );
+  
+  function Log2_To_DB_Amplitude(a_Log2Val) //given a raw log2 value, calc the equivalent as dB
+  (
+    a_Log2Val * LOG2_TO_DB_AMPLITUDE_MUL;
+  );
+  
+  function Log2_To_DB_Power(a_Log2Val) //given a raw log2 value, calc the equivalent as dB
+  (
+    a_Log2Val * LOG2_TO_DB_POWER_MUL;
+  );
+  
+    function DB_To_Amplitude(a_DBVal)
+  (
+    exp(a_DBVal * DB_LN10_AMPLITUDE_MUL);
+  );
+  
+  function DB_To_Power(a_DBVal)
+  (
+    exp(a_DBVal * DB_LN10_POWER_MUL);
+  );
+  
+  function Amplitude_To_DB(a_AmplitudeVal)
+  (
+    log(a_AmplitudeVal) * AMPLITUDE_LN10_DB_MUL;
+  );
+  
+  function Power_To_DB(a_PowerVal)
+  (
+    log(a_PowerVal) * POWER_LN10_DB_MUL;
+  );
+
+
+function jcjrinit() (
+  //should only call js_malloc within js @init section
+  JS_MALLOC_NO_CLEARMEM = 0;
+  JS_MALLOC_CLEARMEM = 1;
+  g_next_js_malloc = 0;
+  
+  LN2_VAL = log(2.0);
+  INV_LN2_VAL = 1.0 / LN2_VAL;
+  //arbitrary limits are imposed, which may or may not be sensible
+  MIN_LOG2_INPUT = 10 ^ -15; //about -300 dB
+  MIN_LOG2_OUTPUT = log(MIN_LOG2_INPUT) * INV_LN2_VAL;
+  MAX_LOG2_INPUT = 10 ^ 15; //about +300 dB
+  MAX_LOG2_OUTPUT = log(MAX_LOG2_INPUT) * INV_LN2_VAL;
+
+  LOG2_TO_DB_AMPLITUDE_MUL = 20.0 * log10(2.0);
+  LOG2_TO_DB_POWER_MUL = 10.0 * log10(2.0);
+  DB_AMPLITUDE_TO_LOG2_MUL = 1.0 / LOG2_TO_DB_AMPLITUDE_MUL;
+  DB_POWER_TO_LOG2_MUL = 1.0 / LOG2_TO_DB_POWER_MUL;
+  
+  LN10_VAL = log(10.0);
+  INV_LN10_VAL = 1.0 / LN10_VAL;
+  DB_LN10_AMPLITUDE_MUL = LN10_VAL * 0.05;
+  DB_LN10_POWER_MUL = LN10_VAL * 0.1;
+  AMPLITUDE_LN10_DB_MUL = 20.0 * INV_LN10_VAL;
+  POWER_LN10_DB_MUL = 10.0 * INV_LN10_VAL;
+  
+  //initialize sin lookup table
+  SIN_TBL_SIZE = 4096;
+  INV_SIN_TBL_SIZE = 1.0 / SIN_TBL_SIZE;
+  SIN_TBL_SQUARED = js_malloc(SIN_TBL_SIZE + 1, JS_MALLOC_CLEARMEM);
+  TWO_PI = 2 * $pi;
+  //_phaseinc = TWO_PI / 4096;
+  _phaseinc = $pi / 4096; //squared sin table is double freq, bottom peak 0, top peak 1.0
+  _phase = _phaseinc;
+  SIN_TBL_SQUARED[0] = 0;
+  SIN_TBL_SQUARED[4096] = 0;
+  //SIN_TBL_SQUARED[0] = 0 and also SIN_TBL_SQUARED[4096] = 0 to ease phase wrapping interpolation
+  _i = 1;
+  while (_i < 4096) //fill out elements [1] thru [4095]
+  (
+    SIN_TBL_SQUARED[_i] = sin(_phase) ^ 2;
+    _i += 1;
+    _phase += _phaseinc;
+  );  
+    
+  //First order trapezoidal filter object
+  //Code adapted from Vadim Zavalishin's book "The Art of VA Filter Design"
+  FIRST_ORD_FILTTYPE_LOPASS = 0;
+  FIRST_ORD_FILTTYPE_HIPASS = 1;
+  FIRST_ORD_FILTTYPE_ALLPASS_ADV = 2; //+180 degrees phase shift at DC, descending to 0 degrees phase shift at nyquist
+  FIRST_ORD_FILTTYPE_ALLPASS_RET = 3; //0 degrees phase shift at DC, descending to -180 degrees phase shift at nyquist
+  
+  //FiltTypes: Use one of the above to set the return value of FirstOrdTrapezoidFilter_DoSamp()
+  //        : However, all values are simultaneously accessible after calling DoSamp() by reading
+  //        : TheFilter.lp, TheFilter.hp, TheFilter.ap_A, TheFilter.ap_R
+  //a_FiltFC: Filter center frequency in Hz
+  //a_SampRate: Samplerate of filter
+  
+  //global vars
+  g_PreDlyMs = 60; //slider1
+  g_DlyLoopMs = 250; //slider2
+  g_RvbTapFB_Percent = 90; //slider3
+  g_RvbModCents = 7.5; //slider4
+  g_OutTapFB_Percent = 0.0; //slider5
+  g_OutModCents = 2.0; //slider6
+  g_LFDampHz = 100; //slider7
+  g_HFDampHz = 5000; //slider8
+  g_AutoPan_Percent = 20; //slider9
+  g_OutTapSelection = 0; //slider10
+  g_WetMix_Percent = 50; //slider11
+  g_DryMix_Percent = 100; //slider12
+  g_OutGainDB = -2; //slider13
+  
+  g_RvbTapFB = g_RvbTapFB_Percent * 0.01;
+  g_OutTapFB = g_OutTapFB_Percent * 0.01;
+  g_AutoPan_Mul = g_AutoPan_Percent * 0.01;
+  g_WetMix_Mul = g_WetMix_Percent * 0.01;  
+  g_DryMix_Mul = g_DryMix_Percent * 0.01;
+  g_OutGain_Mul = DB_To_Amplitude(g_OutGainDB); 
+  
+);  
+  
+  //Given Frequency, calculate first-order exponential Time Constant
+  function FrequencyToTimeConstant(a_Frequency)
+  local (l_result)
+  (
+    l_result = 1.0 / (2.0 * $pi * a_Frequency);
+  );
+  
+  //Given first-order exponential Time Constant, calculate Frequency
+  function TimeConstantToFrequency(a_TimeConstant)
+  local (l_result)
+  (
+    l_result = 1.0 / (2.0 * $pi * a_TimeConstant);
+  );
+
+  function Log_2(a_x)
+  local (l_result)
+  (
+    ((a_x += MIN_LOG2_INPUT) >= MAX_LOG2_INPUT) ?
+      l_result = MAX_LOG2_OUTPUT
+    :
+      l_result = log(a_x) * INV_LN2_VAL;
+    l_result;
+  );
+  
+  function Exp_2(a_x)
+  local (l_result)
+  (
+    (a_x <= MIN_LOG2_OUTPUT) ?
+      l_result = MIN_LOG2_INPUT
+    :
+      (a_x >= MAX_LOG2_OUTPUT) ?
+        l_result = MAX_LOG2_INPUT
+      :
+        l_result = exp(a_x * LN2_VAL);
+    l_result;
+  );
+ 
+  
+  function FirstOrdTrapezoidFilter_Init(a_FiltType, a_FiltFC, a_SampRate)
+  (
+    this.FT = a_FiltType;
+    this.SR = a_SampRate;
+    this.Nyquist = floor(this.SR * 0.49);
+    this.FC = min(a_FiltFC, this.Nyquist);
+
+    this.s = 0.0;
+    this.lp = 0;
+    this.hp = 0;
+    this.ap_A = 0;
+    this.ap_R = 0;
+    
+    //calculate coefficient 
+    this.g = tan($pi * this.FC / this.SR);
+    this.g /= (1 + this.g);
+  );
+  
+  function FirstOrdTrapezoidFilter_SetFC(a_FiltFC)
+  (
+    this.FC = min(a_FiltFC, this.Nyquist);
+    this.g = tan($pi * this.FC / this.SR);
+    this.g /= (1 + this.g);
+  );
+  
+  //Returns the filtered sample
+  function FirstOrdTrapezoidFilter_DoSamp(a_InSamp)
+  local (l_v, l_result)
+  (
+    //Vadim Zavalishin code
+    //v = (x-z1_state)*g/(1+g);
+    //y = v + z1_state;
+    //z1_state = y + v;
+    l_v = (a_InSamp - this.s) * this.g;
+    this.lp = l_v + this.s;
+    this.s = this.lp + l_v;
+    this.hp = a_InSamp - this.lp;
+    this.ap_A = this.hp - this.lp;
+    this.ap_R = this.lp - this.hp;
+    
+    (this.FT == FIRST_ORD_FILTTYPE_LOPASS) ?
+      l_result = this.lp
+    :
+      (this.FT == FIRST_ORD_FILTTYPE_HIPASS) ?
+        l_result = this.hp
+      :
+        (this.FT == FIRST_ORD_FILTTYPE_ALLPASS_ADV) ?
+          l_result = this.ap_A
+        :
+          l_result = this.ap_R;
+    l_result;
+  );
+
+  //managing so many tap wraps can be a cpu hog, try to minimize the if/then checking as much possible
+  function MTapDly_FindNextTapWrap()
+  local (l_i, l_MaxTapTime, l_MaxTapTimeSlot)
+  (
+    l_MaxTapTime = -1;
+    l_MaxTapTimeSlot = -1;
+    l_i = 0;
+    while (l_i < 26)
+    (
+      (l_MaxTapTime < this.MasterTapAry[l_i]) ?
+      (
+        l_MaxTapTime = this.MasterTapAry[l_i];
+        l_MaxTapTimeSlot = l_i;
+      );
+      l_i += 1;
+    );
+    this.TapWrapCountdown = this.DlyBufTop - l_MaxTapTime;
+    this.TapWrapSlot = l_MaxTapTimeSlot;
+  );
+
+  function MTapDly_ForceTapsInBounds()
+  local (l_i)
+  (
+    l_i = 0;
+    while (l_i < 26)
+    (
+      this.MasterTapAry[l_i] += (this.MasterTapAry[l_i] < 0) * this.DlyBufTop; //wrap up if less than bottom
+      this.MasterTapAry[l_i] -= (this.MasterTapAry[l_i] >= this.DlyBufTop) * this.DlyBufTop; //wrap down if greater than top      
+      l_i += 1;
+    );
+  );
+  
+  function MTapDly_EliminateDupeTapTimes() //low probability belt and suspenders
+  local (l_i, l_j)
+  (
+    l_i = 0;
+    while (l_i < 25)
+    (
+      l_j = l_i + 1;
+      while (l_j < 26)
+      (
+        (this.MasterTapAry[l_i] == this.MasterTapAry[l_j]) ?
+        (
+          ((this.MasterTapAry[l_j] -= 1) < 0) ?
+            this.MasterTapAry[l_j] += this.DlyBufTop;
+        );
+        l_j += 1;
+      );
+      l_i += 1;
+    );
+  );
+
+  function MTapDly_SetOutTapSelection(a_OutTapSelection)
+  local (l_tga)
+  (
+    l_tga = this.AudOutTapGainAry;
+    this.OutTapSelection = a_OutTapSelection;
+    (this.OutTapSelection == 0) ? //XXXX
+    (
+      l_tga[0] = l_tga[4] = 0.5; l_tga[1] = l_tga[5] = 0.5; l_tga[2] = l_tga[6] = 0.5; l_tga[3] = l_tga[7] = 0.5;
+    );
+    (this.OutTapSelection == 1) ? //XXX0
+    (
+      l_tga[0] = l_tga[4] = 0.592167; l_tga[1] = l_tga[5] = 0.592167; l_tga[2] = l_tga[6] = 0.592167; l_tga[3] = l_tga[7] = 0.0;
+    ); 
+    (this.OutTapSelection == 2) ? //XX0X
+    (
+      l_tga[0] = l_tga[4] = 0.592167; l_tga[1] = l_tga[5] = 0.592167; l_tga[2] = l_tga[6] = 0.0; l_tga[3] = l_tga[7] = 0.592167;
+    );
+    (this.OutTapSelection == 3) ? //X0XX
+    (
+      l_tga[0] = l_tga[4] = 0.592167; l_tga[1] = l_tga[5] = 0.0; l_tga[2] = l_tga[6] = 0.592167; l_tga[3] = l_tga[7] = 0.592167;
+    );
+    (this.OutTapSelection == 4) ? //XX00
+    (
+      l_tga[0] = l_tga[4] = 0.707946; l_tga[1] = l_tga[5] = 0.707946; l_tga[2] = l_tga[6] = 0.0; l_tga[3] = l_tga[7] = 0.0;
+    );
+    (this.OutTapSelection == 5) ? //X0X0
+    (
+      l_tga[0] = l_tga[4] = 0.707946; l_tga[1] = l_tga[5] = 0.0; l_tga[2] = l_tga[6] = 0.707946; l_tga[3] = l_tga[7] = 0.0;
+    );
+    (this.OutTapSelection == 6) ? //X00X
+    (
+      l_tga[0] = l_tga[4] = 0.707946; l_tga[1] = l_tga[5] = 0.0; l_tga[2] = l_tga[6] = 0.0; l_tga[3] = l_tga[7] = 0.707946;
+    );
+    (this.OutTapSelection == 7) ? //X000
+    (
+      l_tga[0] = l_tga[4] = 1.0; l_tga[1] = l_tga[5] = 0.0; l_tga[2] = l_tga[6] = 0.0; l_tga[3] = l_tga[7] = 0.0;
+    );
+    (this.OutTapSelection == 8) ? //0XXX
+    (
+      l_tga[0] = l_tga[4] = 0.0; l_tga[1] = l_tga[5] = 0.592167; l_tga[2] = l_tga[6] = 0.592167; l_tga[3] = l_tga[7] = 0.592167;
+    );
+    (this.OutTapSelection == 9) ? //0XX0
+    (
+      l_tga[0] = l_tga[4] = 0.0; l_tga[1] = l_tga[5] = 0.707946; l_tga[2] = l_tga[6] = 0.707946; l_tga[3] = l_tga[7] = 0.0;
+    );
+    (this.OutTapSelection == 10) ? //0X0X
+    (
+      l_tga[0] = l_tga[4] = 0.0; l_tga[1] = l_tga[5] = 0.707946; l_tga[2] = l_tga[6] = 0.0; l_tga[3] = l_tga[7] = 0.707946;
+    );
+    (this.OutTapSelection == 11) ? //0X00
+    (
+      l_tga[0] = l_tga[4] = 0.0; l_tga[1] = l_tga[5] = 1.0; l_tga[2] = l_tga[6] = 0.0; l_tga[3] = l_tga[7] = 0.0;
+    );
+    (this.OutTapSelection == 12) ? //00XX
+    (
+      l_tga[0] = l_tga[4] = 0.0; l_tga[1] = l_tga[5] = 0.0; l_tga[2] = l_tga[6] = 0.707946; l_tga[3] = l_tga[7] = 0.707946;
+    );
+    (this.OutTapSelection == 13) ? //00X0
+    (
+      l_tga[0] = l_tga[4] = 0.0; l_tga[1] = l_tga[5] = 0.0; l_tga[2] = l_tga[6] = 1.0; l_tga[3] = l_tga[7] = 0.0;
+    );
+    (this.OutTapSelection == 14) ? //000X
+    (
+      l_tga[0] = l_tga[4] = 0.0; l_tga[1] = l_tga[5] = 0.0; l_tga[2] = l_tga[6] = 0.0; l_tga[3] = l_tga[7] = 1.0;
+    );
+  );
+
+  function MTapDly_SetDlyLoopLen(a_DlyLoopMs)
+  local (l_i, l_scale, l_DlyLoopHeadIdx)
+  (
+    this.SuspendCount += 1.0;
+    this.DlyLoop_Secs = a_DlyLoopMs * 0.001;
+    this.DlyLoop_Samps = ceil(this.DlyLoop_Secs * this.SR);
+    l_scale = this.SR * this.DlyLoop_Secs / 0.250;
+    l_DlyLoopHeadIdx = this.DlyLoopHead[0];
+    this.OutTapAry[0] = floor(l_DlyLoopHeadIdx - 0.058719 * l_scale);
+    this.OutTapAry[1] = floor(l_DlyLoopHeadIdx - 0.147135 * l_scale);
+    this.OutTapAry[2] = floor(l_DlyLoopHeadIdx - 0.167387 * l_scale);
+    this.OutTapAry[3] = floor(l_DlyLoopHeadIdx - 0.210065 * l_scale);
+    this.OutTapAry[4] = floor(l_DlyLoopHeadIdx - 0.093690 * l_scale);
+    this.OutTapAry[5] = floor(l_DlyLoopHeadIdx - 0.122839 * l_scale);
+    this.OutTapAry[6] = floor(l_DlyLoopHeadIdx - 0.184267 * l_scale);
+    this.OutTapAry[7] = floor(l_DlyLoopHeadIdx - 0.198337 * l_scale);
+
+    this.RvbTapAry[0] = floor(l_DlyLoopHeadIdx - 0.047 * l_scale);
+    this.RvbTapAry[1] = floor(l_DlyLoopHeadIdx - 0.073359 * l_scale);
+    this.RvbTapAry[2] = floor(l_DlyLoopHeadIdx - 0.096939 * l_scale);
+    this.RvbTapAry[3] = floor(l_DlyLoopHeadIdx - 0.118034 * l_scale);
+    this.RvbTapAry[4] = floor(l_DlyLoopHeadIdx - 0.136903 * l_scale);
+    this.RvbTapAry[5] = floor(l_DlyLoopHeadIdx - 0.153784 * l_scale);
+    this.RvbTapAry[6] = floor(l_DlyLoopHeadIdx - 0.168884 * l_scale);
+    this.RvbTapAry[7] = floor(l_DlyLoopHeadIdx - 0.182392 * l_scale);
+    this.RvbTapAry[8] = floor(l_DlyLoopHeadIdx - 0.194476 * l_scale);
+    this.RvbTapAry[9] = floor(l_DlyLoopHeadIdx - 0.205286 * l_scale);
+    this.RvbTapAry[10] = floor(l_DlyLoopHeadIdx - 0.214956 * l_scale);
+    this.RvbTapAry[11] = floor(l_DlyLoopHeadIdx - 0.223607 * l_scale);
+    this.RvbTapAry[12] = floor(l_DlyLoopHeadIdx - 0.231345 * l_scale);
+    this.RvbTapAry[13] = floor(l_DlyLoopHeadIdx - 0.238268 * l_scale);
+    this.RvbTapAry[14] = floor(l_DlyLoopHeadIdx - 0.244460 * l_scale);
+    this.RvbTapAry[15] = floor(l_DlyLoopHeadIdx - 0.250000 * l_scale);
+    
+    this.MTapDly_ForceTapsInBounds();
+    this.MTapDly_EliminateDupeTapTimes();
+    this.MTapDly_FindNextTapWrap();
+
+    this.SuspendCount -= 1.0;
+  );
+
+  function MTapDly_SetLFDamp(a_LFDampHz)
+  (
+    this.gm_LFDamp = tan(a_LFDampHz * this.PiDivSR);
+    this.gm_LFDamp /= (1 + this.gm_LFDamp);
+  );
+
+  function MTapDly_SetHFDamp(a_HFDampHz)
+  (
+    this.gm_HFDamp = tan(a_HFDampHz * this.PiDivSR);
+    this.gm_HFDamp /= (1 + this.gm_HFDamp);
+  );
+    
+  function MTapDly_Init(a_PreDlyMs, a_DlyLoopMs, a_OutTapFB, a_RvbTapFB, a_LFDampHz, a_HFDampHz, a_RvbModCents, a_OutModCents, a_AutoPanMul, a_OutTapSelection, a_SampRate)
+  local (l_i, l_scale, l_LFOPeriodSamps, l_TCSamps)
+  (
+    this.SuspendCount = 1.0;
+    this.SR = a_SampRate;
+    this.Nyquist = floor(this.SR * 0.49);
+    this.PiDivSR = $pi / this.SR;
+    this.PreDly_Secs = a_PreDlyMs * 0.001;
+    this.DlyLoop_Secs = a_DlyLoopMs * 0.001;
+    this.OutTapFB = a_OutTapFB;
+    this.RvbTapFB = a_RvbTapFB;
+    this.RvbModCents = a_RvbModCents;
+    this.OutModCents = a_OutModCents;
+    this.AutoPanMul = a_AutoPanMul;
+
+    this.DlyLoop_Samps = ceil(this.DlyLoop_Secs * this.SR);
+    this.PreDly_Samps = ceil(this.PreDly_Secs * this.SR);
+    this.DlyBufTop = ceil(1.300 * this.SR); //max 1000 ms for DlyLoop, max 200 ms for PreDly, 100 ms for slop
+    this.DlyBuf = js_malloc(this.DlyBufTop + 2, JS_MALLOC_CLEARMEM); //dup head to top and bottom for easier interpolation
+    this.AudOutputsAry = js_malloc(8, JS_MALLOC_CLEARMEM);
+    this.AudOutTapGainAry = js_malloc(8, JS_MALLOC_CLEARMEM);
+    this.MTapDly_SetOutTapSelection(a_OutTapSelection);
+    this.MasterTapAry = js_malloc(26, JS_MALLOC_CLEARMEM); //pre-delay head, delay loop head, 8 output taps and 16 reverb taps
+    this.PreDlyHead = this.MasterTapAry; //PreDlyHead[0] is value of MasterTapAry[0]
+    this.DlyLoopHead = this.MasterTapAry + 1; //DlyLoopHead[0] is value of MasterTapAry[1]
+    this.OutTapAry = this.MasterTapAry + 2; //OutTapAry[0] thru [7] is value of MasterTapAry [2] thru [9]
+    this.RvbTapAry = this.MasterTapAry + 10; //RvbTapAry[0] thru [15] is value of MasterTapAry [10] thru [25]
+
+    this.PreDlyHead[0] = this.DlyBufTop - 1;
+    this.DlyLoopHead[0] = this.PreDlyHead[0] - this.PreDly_Samps;
+    this.MTapDly_SetDlyLoopLen(a_DlyLoopMs);
+    
+    this.s_LFDamp = 0.0;
+    this.s_HFDamp = 0.0;
+    this.MTapDly_SetLFDamp(a_LFDampHz);
+    this.MTapDly_SetHFDamp(a_HFDampHz);
+    
+    this.RvbModSlopeIncPerSamp = (2 ^ (this.RvbModCents / 1200.0)) - 1.0;
+    this.OutModSlopeIncPerSamp = (2 ^ (this.OutModCents / 1200.0)) - 1.0;
+    this.LFO_SinTblIncRatio = SIN_TBL_SIZE / this.SR;
+    this.LFO_FreqHzAry = js_malloc(32, JS_MALLOC_CLEARMEM);
+    this.LFO_TblIncPerSampAry = js_malloc(32, JS_MALLOC_CLEARMEM);
+    this.LFO_TblPhaseIdxAry = js_malloc(32, JS_MALLOC_CLEARMEM);
+    this.LFO_AmpMulAry = js_malloc(32, JS_MALLOC_CLEARMEM);
+    this.LFO_OutAry = js_malloc(32, JS_MALLOC_CLEARMEM);
+    l_i = 0;
+    while (l_i < 32)
+    (
+      this.LFO_FreqHzAry[l_i] = 0.5 * (1 + rand(3)); //scramble LFO startup freq between 0.5 and 2 Hz
+      this.LFO_TblIncPerSampAry[l_i] = this.LFO_FreqHzAry[l_i] * this.LFO_SinTblIncRatio;
+      this.LFO_TblPhaseIdxAry[l_i] = floor((SIN_TBL_SIZE - 1) * rand(1)); //scramble LFO startup phases
+      l_LFOPeriodSamps = this.SR / this.LFO_FreqHzAry[l_i];
+      (l_i < 16) ? //FB Taps
+        this.LFO_AmpMulAry[l_i] = 0.636620 * l_LFOPeriodSamps * this.RvbModSlopeIncPerSamp //scale by 2/pi = 0.636620
+      : //else Out Taps or AutoPan
+      (
+        (l_i < 24) ?
+          this.LFO_AmpMulAry[l_i] = 0.636620 * l_LFOPeriodSamps * this.OutModSlopeIncPerSamp //scale by 2/pi = 0.636620
+        :
+          this.LFO_AmpMulAry[l_i] = 1.0; //AutoPan
+      );
+      l_i += 1;
+    );    
+    
+    //setup delay line feedback runaway limiter
+    l_TCSamps = 0.02 * this.SR; //20 ms attack time constant
+    this.FBEnv_ACoff = 1.0 / (2.0 * l_TCSamps);
+    this.FBEnv_ACoff /= (1 + this.FBEnv_ACoff);
+    l_TCSamps = 1.0 * this.SR; //1000 ms release time constant
+    this.FBEnv_RCoff = 1.0 / (2.0 * l_TCSamps);
+    this.FBEnv_RCoff /= (1 + this.FBEnv_RCoff);    
+    this.FBEnv_s = 1.0; //attack-release state variable
+    
+    this.Initted = 1.0;
+    this.SuspendCount = 0.0;
+  );
+  
+  function MTapDly_SetRvbModCents(a_RvbModCents)
+  local (l_i, l_LFOPeriodSamps)
+  (
+    this.SuspendCount += 1.0;
+    this.RvbModCents = a_RvbModCents;
+    this.RvbModSlopeIncPerSamp = (2 ^ (this.RvbModCents / 1200.0)) - 1.0;
+    
+    l_i = 0;
+    while (l_i < 16)
+    (
+      l_LFOPeriodSamps = this.SR / this.LFO_FreqHzAry[l_i];
+      this.LFO_AmpMulAry[l_i] = 0.636620 * l_LFOPeriodSamps * this.RvbModSlopeIncPerSamp;
+      l_i += 1;
+    );
+    this.SuspendCount -= 1.0;
+  );
+  
+  function MTapDly_SetOutModCents(a_OutModCents)
+  local (l_i, l_LFOPeriodSamps)
+  (
+    this.SuspendCount += 1.0;
+    this.OutModCents = a_OutModCents;
+    this.OutModSlopeIncPerSamp = (2 ^ (this.OutModCents / 1200.0)) - 1.0;
+    
+    l_i = 16;
+    while (l_i < 24)
+    (
+      l_LFOPeriodSamps = this.SR / this.LFO_FreqHzAry[l_i];
+      this.LFO_AmpMulAry[l_i] = 0.636620 * l_LFOPeriodSamps * this.OutModSlopeIncPerSamp;
+      l_i += 1;
+    );
+    this.SuspendCount -= 1.0;
+  );  
+
+  function MTapDly_SetPreDelay(a_PreDlyMs)
+  (
+    this.SuspendCount += 1.0;
+    this.PreDly_Secs = a_PreDlyMs * 0.001;
+    this.PreDly_Samps = ceil(this.PreDly_Secs * this.SR);
+    this.PreDlyHead[0] = this.DlyLoopHead[0] + this.PreDly_Samps;
+    this.PreDlyHead[0] -= (this.PreDlyHead[0] >= this.DlyBufTop) * this.DlyBufTop;
+    this.MTapDly_EliminateDupeTapTimes();
+    this.MTapDly_FindNextTapWrap();
+    this.SuspendCount -= 1.0;
+  );  
+
+  function MTapDly_RunLFOs()
+  local (l_i, l_TblPhaseIdx, l_int, l_frac, l_LFOPeriodSamps, l_MaxNewPhaseIdx)
+  (
+    l_MaxNewPhaseIdx = 0;
+    l_i = 0;
+    while (l_i < 32)
+    (
+      l_TblPhaseIdx = this.LFO_TblPhaseIdxAry[l_i];
+      l_int = floor(l_TblPhaseIdx);
+      l_frac = l_TblPhaseIdx - l_int;
+      this.LFO_OutAry[l_i] = this.LFO_AmpMulAry[l_i] * (SIN_TBL_SQUARED[l_int] * (1 - l_frac) + SIN_TBL_SQUARED[l_int + 1] * l_frac); //linear interpolate
+      l_MaxNewPhaseIdx = max(this.LFO_TblPhaseIdxAry[l_i] = l_TblPhaseIdx + this.LFO_TblIncPerSampAry[l_i], l_MaxNewPhaseIdx); 
+      l_i += 1;
+    );
+    (l_MaxNewPhaseIdx >= SIN_TBL_SIZE) ? //only do wraparound checking if necessary
+    (
+      l_i = 0;
+      while (l_i < 32)
+      (
+        (this.LFO_TblPhaseIdxAry[l_i] >= SIN_TBL_SIZE) ? //possibly phase wrap and choose new random freq
+        (
+          this.LFO_TblPhaseIdxAry[l_i] -= SIN_TBL_SIZE;
+          this.LFO_FreqHzAry[l_i] = 0.5 * (1 + rand(3)); //choose new random freq between 0.5 and 1.0
+          this.LFO_TblIncPerSampAry[l_i] = this.LFO_FreqHzAry[l_i] * this.LFO_SinTblIncRatio;
+          l_LFOPeriodSamps = this.SR / this.LFO_FreqHzAry[l_i];
+          (l_i < 16) ? //FB Taps
+            this.LFO_AmpMulAry[l_i] = 0.636620 * l_LFOPeriodSamps * this.RvbModSlopeIncPerSamp //scale by 2/pi = 0.636620
+          : //else Out Taps or AutoPan
+          (
+            (l_i < 24) ?
+              this.LFO_AmpMulAry[l_i] = 0.636620 * l_LFOPeriodSamps * this.OutModSlopeIncPerSamp //scale by 2/pi = 0.636620
+            : //else AutoPan
+              this.LFO_AmpMulAry[l_i] = 1.0;
+          );
+        );
+        l_i += 1;
+      );
+    );
+  );
+      
+  function MTapDly_DoSamp(a_In_L, a_In_R)
+  local (l_i, l_DlyBuf, l_OutTapAry, l_RvbTapAry, l_AudOutputsAry, l_FBSum, l_v, l_lp, l_idx, l_int, l_frac, l_samp, l_mul, l_autopan_L, l_autopan_R, l_tga)
+  (
+    (this.SuspendCount < 1.0) ?
+    (
+      l_DlyBuf = this.DlyBuf;
+      l_OutTapAry = this.OutTapAry; //maybe faster local vars for multiple de-referencing, dunno
+      l_RvbTapAry = this.RvbTapAry;
+      l_AudOutputsAry = this.AudOutputsAry;
+      l_tga = this.AudOutTapGainAry;
+            
+      l_idx = this.PreDlyHead[0];
+      l_DlyBuf[l_idx] = l_samp = ((a_In_L + a_In_R) * 0.5);
+      (l_idx == 0) ? //dup also "above top" for easier tail interpolation
+        l_DlyBuf[this.DlyBufTop] = l_samp;
+
+      this.MTapDly_RunLFOs(); //update all 32 LFOs
+      
+      (this.OutModCents > 0) ? //pitch modulate the output taps
+      (
+        l_i = 0;
+        while (l_i < 8)
+        (         
+          l_idx = l_OutTapAry[l_i] + this.LFO_OutAry[l_i + 16];
+          l_idx -= this.DlyBufTop * (l_idx >= this.DlyBufTop); //possibly wrap
+          l_int = floor(l_idx);
+          l_frac = l_idx - l_int;
+          l_AudOutputsAry[l_i] = l_tga[l_i] * (l_DlyBuf[l_int] * (1 - l_frac) + l_DlyBuf[l_int + 1] * l_frac); //linear interpolate                
+          l_i += 1;
+        );
+      )
+      : //else no Output pitch mod, no need to interpolate samples
+      (
+        l_i = 0;
+        while (l_i < 8)
+        (
+          l_AudOutputsAry[l_i] = l_tga[l_i] * l_DlyBuf[l_OutTapAry[l_i]];
+          l_i += 1;
+        );
+      );    
+      this.Out_L = l_AudOutputsAry[0] + l_AudOutputsAry[1] + l_AudOutputsAry[2] + l_AudOutputsAry[3]; 
+      this.Out_R = l_AudOutputsAry[4] + l_AudOutputsAry[5] + l_AudOutputsAry[6] + l_AudOutputsAry[7];      
+      
+      l_FBSum = 0;     
+      (this.RvbTapFB > 0.0) ? //don't bother with calc if no rvb feedback
+      (
+        l_i = 0;
+        while (l_i < 16)
+        (
+          l_idx = l_RvbTapAry[l_i] + this.LFO_OutAry[l_i];
+          l_idx -= this.DlyBufTop * (l_idx >= this.DlyBufTop); //possibly wrap
+          l_int = floor(l_idx);
+          l_frac = l_idx - l_int;
+          l_samp = l_DlyBuf[l_int] * (1 - l_frac) + l_DlyBuf[l_int + 1] * l_frac;        
+          l_FBSum += l_samp;
+          l_i += 1;
+        );          
+        l_FBSum *= (this.RvbTapFB * 0.1875);
+      );
+      
+      l_FBSum += (this.OutTapFB * 0.5 * (this.Out_L + this.Out_R));
+  
+      ((l_v = (max(abs(l_FBSum), 1.0) - this.FBEnv_s)) > 0.0) ? //attack-release envelope for runaway protect limiter
+        l_v *= this.FBEnv_ACoff //attack
+      :
+        l_v *= this.FBEnv_RCoff; //release
+      l_lp = l_v + this.FBEnv_s; //l_lp here is temporarily the smoothed feedback envelope value
+      this.FBEnv_s = l_lp + l_v;
+      l_frac = (1.0 / l_lp); //l_frac is temporarily the feedback limiter gain
+      l_FBSum *= (l_frac * l_frac); //possibly hard-limit, lowering output BELOW thresh by squaring the (less than 1.0) gain
+      
+      l_idx = this.DlyLoopHead[0]; //temp use l_idx avoid repeatedly de-referencing DlyLoopHead[0]
+      l_FBSum += l_DlyBuf[l_idx]; //add possible rvb feedback and out taps feedback to the fresh audio input
+      //do HFDamp and LFDamp on the mix of fresh audio input plus rvb feedback plus out taps feedback
+      //hipass for LFDamp
+      l_v = (l_FBSum - this.s_LFDamp) * this.gm_LFDamp;
+      l_lp = l_v + this.s_LFDamp;
+      this.s_LFDamp = l_lp + l_v;
+      l_FBSum -= l_lp; //make LFDamp Hipass
+      //lopass for HFDamp
+      l_v = (l_FBSum - this.s_HFDamp) * this.gm_HFDamp;
+      l_lp = l_v + this.s_HFDamp;
+      this.s_HFDamp = l_lp + l_v;    
+      l_FBSum = l_lp;
+      
+      l_DlyBuf[l_idx] = l_FBSum; //write the HF and LF damped, [input + feedback] mix back into the delay loop head
+      (l_idx == 0) ? //dup also "above top" for easier tail interpolation
+        l_DlyBuf[this.DlyBufTop] = l_FBSum;
+
+      (this.AutoPanMul > 0.0) ?
+      (
+        l_autopan_L = 0;
+        l_autopan_R = 0;
+        l_i = 0;
+        while (l_i < 8)
+        (
+          l_mul = this.LFO_OutAry[l_i + 24];
+          l_samp = l_AudOutputsAry[l_i];
+          l_autopan_L += l_samp * (1 - l_mul);
+          l_autopan_R += l_samp * l_mul;      
+          l_i += 1;
+        );
+        this.Out_L = this.Out_L * (1 - this.AutoPanMul) + l_autopan_L * this.AutoPanMul;
+        this.Out_R = this.Out_R * (1 - this.AutoPanMul) + l_autopan_R * this.AutoPanMul;
+      );
+
+      l_i = 0;
+      while (l_i < 26)
+      (
+        this.MasterTapAry[l_i] += 1;
+        l_i += 1;
+      );
+      ((this.TapWrapCountdown -= 1) <= 0) ?
+      (
+        this.MasterTapAry[this.TapWrapSlot] = 0; //wrap the single tap ptr needs wrapping
+        this.MTapDly_FindNextTapWrap(); //find next one that will need wrapping
+      );
+    );
+  );
+  
+function jcjrinit2() (
+o_MTap.MTapDly_Init(g_PreDlyMs, g_DlyLoopMs, g_OutTapFB, g_RvbTapFB, g_LFDampHz, g_HFDampHz, g_RvbModCents, g_OutModCents, g_AutoPan_Mul, g_OutTapSelection, srate);
+);
+  
+function jcjrslider() (
+  (slider26 != g_PreDlyMs) ?
+  (
+    slider26 = max(min(slider26, 200), 0.1);
+    g_PreDlyMs = slider26;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.MTapDly_SetPreDelay(g_PreDlyMs);
+  );
+
+  (slider27 != g_DlyLoopMs) ?
+  (
+    slider27 = max(min(slider27, 1000), 0.1);
+    g_DlyLoopMs = slider27;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.MTapDly_SetDlyLoopLen(g_DlyLoopMs);
+  );
+
+  (slider28 != g_RvbTapFB_Percent) ?
+  (
+    slider28 = max(min(slider28, 100.0), 0.0);
+    g_RvbTapFB_Percent = slider28;
+    g_RvbTapFB = g_RvbTapFB_Percent * 0.01;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.RvbTapFB = g_RvbTapFB;
+  );
+
+  (slider29 != g_RvbModCents) ?
+  (
+    slider29 = max(min(slider29, 20.0), 0);
+    g_RvbModCents = slider29;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.MTapDly_SetRvbModCents(g_RvbModCents);
+  );
+
+  (slider30 != g_OutTapFB_Percent) ?
+  (
+    slider30 = max(min(slider30, 100.0), 0.0);
+    g_OutTapFB_Percent = slider30;
+    g_OutTapFB = g_OutTapFB_Percent * 0.01;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.OutTapFB = g_OutTapFB;
+  );
+
+  (slider31 != g_OutModCents) ?
+  (
+    slider31 = max(min(slider31, 20.0), 0.0);
+    g_OutModCents = slider31;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.MTapDly_SetOutModCents(g_OutModCents);
+  );
+  
+  (slider32 != g_LFDampHz) ?
+  (
+    slider32 = max(min(slider32, 400), 40);
+    g_LFDampHz = slider32;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.MTapDly_SetLFDamp(g_LFDampHz);
+  );
+  
+  (slider33 != g_HFDampHz) ?
+  (
+    slider33 = max(min(slider33, 10000), 1000);
+    g_HFDampHz = slider33;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.MTapDly_SetHFDamp(g_HFDampHz);
+  );
+
+  (slider34 != g_AutoPan_Percent) ?
+  (
+    slider34 = max(min(slider34, 100), 0);
+    g_AutoPan_Percent = slider34;
+    g_AutoPan_Mul = g_AutoPan_Percent * 0.01;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.AutoPanMul = g_AutoPan_Mul;
+  );
+
+  (slider35 != g_OutTapSelection) ?
+  (
+    slider35 = max(min(slider35, 14), 0);
+    g_OutTapSelection = slider35;
+    (o_MTap.Initted == 1.0) ?
+      o_MTap.MTapDly_SetOutTapSelection(g_OutTapSelection);
+  );
+  
+  (g_OuttaTheWet != g_WetMix_Percent) ?
+  (
+    g_OuttaTheWet = max(min(100, 100), 0);
+    g_WetMix_Percent = g_OuttaTheWet;
+    g_WetMix_Mul = g_WetMix_Percent * 0.01;
+  );
+
+  (g_OuttaTheDry != g_DryMix_Percent) ?
+  (
+    g_OuttaTheDry = max(min(0, 100), 0);
+    g_DryMix_Percent = g_OuttaTheDry;
+    g_DryMix_Mul = g_DryMix_Percent * 0.01;
+  );
+
+  (g_OuttaTheDB != g_OutGainDB) ?
+  (
+    g_OuttaTheDB = max(min(0, 6), -24);
+    g_OutGainDB = g_OuttaTheDB;
+    g_OutGain_Mul = DB_To_Amplitude(g_OutGainDB);   
+  );
+);
+
+function jcjrsample() (
+  o_MTap.MTapDly_DoSamp(spl0, spl1);
+  spl0 = g_OutGain_Mul * (g_DryMix_Mul * spl0 + g_WetMix_Mul * o_MTap.Out_L);
+  spl1 = g_OutGain_Mul * (g_DryMix_Mul * spl1 + g_WetMix_Mul * o_MTap.Out_R);
+);
+
+
+function jcjrgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_topratio(1/2);
+            ui_split_leftratio(1/4);
+            control_group("");
+                ui_automate(slider27, labelled_dial(slider27, 250, 0.1, 1000, 0, "delay l", slider27, "%.1f ms", 50,50,12));
+            ui_pop();
+            control_group("");
+            ui_split_leftratio(1/3);
+                ui_automate(slider26, labelled_dial(slider26, 60, 0.1, 200, 0, "pre delay", slider26, "%.1f ms", 50,50,12));
+            ui_split_next();
+                ui_automate(slider28, labelled_dial(slider28, 90, 0, 100, 0, "rev fbck", slider28, "%.1f %%", 50,50,12));
+            ui_split_next();
+                ui_automate(slider29, labelled_dial(slider29, 7.5, 0, 20, 0, "rev mod", slider29, "%.1f cents", 50,50,12));
+            ui_pop();
+        ui_pop();
+        control_group("");
+        ui_split_leftratio(1/6);
+            ui_automate(slider30, labelled_dial(slider30, 0, 0, 100, 0, "out fbck", slider30, "%.1f %%", 40,40,11));
+            ui_split_next();
+                ui_automate(slider31, labelled_dial(slider31, 2, 0, 20, 0, "out mod", slider31, "%.1f cents", 40,40,11));
+            ui_split_next();
+                ui_automate(slider32, labelled_dial(slider32, 100, 40, 400, 0, "hp", slider32, "%.i Hz", 40,40,11));
+            ui_split_next();
+                ui_automate(slider33, labelled_dial(slider33, 5000, 1000, 10000, 0, "lp", slider33, "%.i Hz", 40,40,11));
+            ui_split_next();
+                ui_automate(slider34, labelled_dial(slider34, 20, 0, 100, 0, "autopan", slider34, "%.1f %%", 40,40,11));
+            ui_split_next();
+                ui_automate(slider35, fixed_dial(slider35, 0, 0, 14, 0, "taps", slider35, 
+                                                 slider35 < 1 ? ("[X][X][X][X]")
+                                                 : slider35 < 2 ? ("[X][X][X][_]")
+                                                 : slider35 < 3 ? ("[X][X][_][X]")
+                                                 : slider35 < 4 ? ("[X][_][X][X]")
+                                                 : slider35 < 5 ? ("[X][X][_][_]")
+                                                 : slider35 < 6 ? ("[X][_][X][_]")
+                                                 : slider35 < 7 ? ("[X][_][_][X]")
+                                                 : slider35 < 8 ? ("[X][_][_][_]")
+                                                 : slider35 < 9 ? ("[_][X][X][X]")
+                                                 : slider35 < 10 ? ("[_][X][X][_]")
+                                                 : slider35 < 11 ? ("[_][X][_][X]")
+                                                 : slider35 < 12 ? ("[_][X][_][_]")
+                                                 : slider35 < 13 ? ("[_][_][X][X]")
+                                                 : slider35 < 14 ? ("[_][_][X][_]")
+                                                 : slider35 < 15 ? ("[_][_][_][X]"), 40,40,10));
+        ui_pop();
+    ui_pop();
+    
+        draw_verbs(slider27*0.075*0.01,slider26*0.05*0.075,0.45,slider28*0.0045);
+);

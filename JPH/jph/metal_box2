@@ -48,7 +48,7 @@ slider31:2<0,20,0.1>-Output Taps Mod [Cents]
 slider32:100<40,400,1>-Low Freq Damp [Hz]
 slider33:5000<1000,10000,1>-Hi Freq Damp [Hz]
 slider34:20<0,100,0.1>-AutoPan Mod [Percent]
-slider35:100<0,100,0.1>-Space Dry/Wet
+slider35:60<0,100,0.1>-Space Dry/Wet
 slider36:1<0,1,1>-Space Off/On Switch
 
 slider60:0<0,6,1>-Theme
@@ -1050,7 +1050,7 @@ ui_split_topratio(0.3);
               ui_split_leftratio(1/2);
                   ui_automate(slider22, labelled_dial(slider22, 50, 0.01, 100, 0, "feedback", slider22, "%.1f %%", 50,50,14));
               ui_split_next();
-                  ui_automate(slider7, labelled_dial(slider7, 0.2, 0, 1, 0, "vol", slider7, "%.1f", 50,50,14));
+                  ui_automate(slider7, labelled_dial(slider7, 0.4, 0, 1, 0, "vol", slider7, "%.1f", 50,50,14));
               ui_pop();
           ui_pop();
           
@@ -1072,7 +1072,7 @@ ui_split_topratio(0.3);
               ui_split_leftratio(1/2);
                   ui_automate(slider23, labelled_dial(slider23, 50, 0.01, 100, 0, "feedback", slider23, "%.1f %%", 50,50,14));
               ui_split_next();
-                  ui_automate(slider8, labelled_dial(slider8, 0.2, 0, 1, 0, "vol", slider8, "%.1f", 50,50,14));
+                  ui_automate(slider8, labelled_dial(slider8, 0.6, 0, 1, 0, "vol", slider8, "%.1f", 50,50,14));
               ui_pop();
           ui_pop();
           
@@ -1094,7 +1094,7 @@ ui_split_topratio(0.3);
               ui_split_leftratio(1/2);
                   ui_automate(slider24, labelled_dial(slider24, 50, 0.01, 100, 0, "feedback", slider24, "%.1f %%", 50,50,14));
               ui_split_next();
-                  ui_automate(slider9, labelled_dial(slider9, 0.2, 0, 1, 0, "vol", slider9, "%.1f", 50,50,14));
+                  ui_automate(slider9, labelled_dial(slider9, 0.8, 0, 1, 0, "vol", slider9, "%.1f", 50,50,14));
               ui_pop();
           ui_pop();
       
@@ -1116,7 +1116,7 @@ ui_split_topratio(0.3);
               ui_split_leftratio(1/2);
                   ui_automate(slider25, labelled_dial(slider25, 50, 0.01, 100, 0, "feedback", slider25, "%.1f %%", 50,50,14));
               ui_split_next();
-                  ui_automate(slider10, labelled_dial(slider10, 0.2, 0, 1, 0, "vol", slider10, "%.1f", 50,50,14));
+                  ui_automate(slider10, labelled_dial(slider10, 1, 0, 1, 0, "vol", slider10, "%.1f", 50,50,14));
               ui_pop();
           ui_pop();
 ui_pop();
@@ -1184,7 +1184,7 @@ control_group_jph("",1,1,33,2,2,10);
     ui_split_next();
         ui_automate(slider34, labelled_dial(slider34, 20, 0, 100, 0, "autopan", slider34, "%.1f %%", 50,50,14));
     ui_split_next();
-        ui_automate(slider35, labelled_dial(slider35, 100, 0, 100, 0, "dry|wet", slider35, "%.1f %%", 50,50,14));
+        ui_automate(slider35, labelled_dial(slider35, 60, 0, 100, 0, "dry|wet", slider35, "%.1f %%", 50,50,14));
     ui_pop();
 ui_pop();
 

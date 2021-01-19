@@ -19,6 +19,8 @@ import /dist_inc/mda_overdrive.jsfx-inc
 import /dist_inc/tube_amp.jsfx-inc
 import /dist_inc/tube_thingy.jsfx-inc
 import /dist_inc/harmonics.jsfx-inc
+import /dist_inc/scarlet_avenger.jsfx-inc
+import /dist_inc/emerald_thunderFalcon.jsfx-inc
 
 slider1:20<1,300>-Shape    ---fuzz---
 slider2:-25<-60,60,1>-Hard Limit (dB)
@@ -45,7 +47,7 @@ slider17:1<0,3,1{Off,2x,4x,8x}>-Oversample
 slider18:0<-24,24,0.1>-Input (dB)    ---tube2---
 slider19:50<1,100,1>-Tube (%)
 
-slider20:19<0,37,1{z+abs(x),z+x^slider8,x^slider9,z+exp(-1/x^slider8),z+log(1+(cos(x)-1)),z+(4*x^3-3*x),sin(atan(x)),((0.5*x^3)+(0.48*x^2)+(0.55*x))*0.5,-(x/abs(x)*(1-exp((x^2)/abs(x))))*0.5,z+(cos(x)*sin(x)),z+cos(x*($pi/4))-0.4+exp(x-0.25)/100,sin(z)+(abs(sin(x)))^slider8-0.2,(x-a*x^2-b*x^3+a)*0.5,x-(x^slider9)/(2*slider9),-0.5*log((1-x/1.5)/(1+x/1.5)),x-(x^3)/(3*2)+(x^5)/(5*4*3*2)-(x^7)/(7*6*5*4*3*2)+(x^9)/(9*8*7*6*5*4*3*2),z+sin(x)*(x-x^3/6+x^5/120),x^3/(1+abs(x^3)),1.5*x*(1-x*x/3),2/(1+exp(-g*x))-1,atan(x*g)/atan(g),atan(x*g)/(0.2+atan(g)),(x-atan((x*g)*(x*g)*(x*g))/atan(6*g)),1-exp(-x),x*(1+x^2)/(1+abs(x*(1+x^2))),(a*x+b*x^2+g*x^3)/(1+abs(a*x)+b*x^2+abs(g*x^3)),x*(1+x^4)/(1+abs(x*(1+x^4))),(x*abs(x)+x)/(x*x+abs(x)+1),x/(0.25*x*x+1),x/(1+abs(x)+abs(a)*$pi*(0.5*x^2-abs(x))),g*$pi*x/(1+g*$pi*abs(x)),x*(27+x*x)/(27+9*x*x),z+x^slider8/slider9,(2shiftright1)*atan(x)*0.6333,(z+x^slider8)*w or x^slider9,tanh0(x),cosh(x),((1+a)*x+b*x^2+c*x^3)/((1+a)+b+c)}>-mode
+slider20:19<0,37,1{z+abs(x),z+x^slider8,x^slider9,z+exp(-1/x^slider8),z+log(1+(cos(x)-1)),z+(4*x^3-3*x),sin(atan(x)),((0.5*x^3)+(0.48*x^2)+(0.55*x))*0.5,-(x/abs(x)*(1-exp((x^2)/abs(x))))*0.5,z+(cos(x)*sin(x)),z+cos(x*($pi/4))-0.4+exp(x-0.25)/100,sin(z)+(abs(sin(x)))^slider8-0.2,(x-a*x^2-b*x^3+a)*0.5,x-(x^slider9)/(2*slider9),-0.5*log((1-x/1.5)/(1+x/1.5)),x-(x^3)/(3*2)+(x^5)/(5*4*3*2)-(x^7)/(7*6*5*4*3*2)+(x^9)/(9*8*7*6*5*4*3*2),z+sin(x)*(x-x^3/6+x^5/120),x^3/(1+abs(x^3)),1.5*x*(1-x*x/3),2/(1+exp(-g*x))-1,atan(x*g)/atan(g),atan(x*g)/(0.2+atan(g)),(x-atan((x*g)*(x*g)*(x*g))/atan(6*g)),1-exp(-x),x*(1+x^2)/(1+abs(x*(1+x^2))),(a*x+b*x^2+g*x^3)/(1+abs(a*x)+b*x^2+abs(g*x^3)),x*(1+x^4)/(1+abs(x*(1+x^4))),(x*abs(x)+x)/(x*x+abs(x)+1),x/(0.25*x*x+1),x/(1+abs(x)+abs(a)*$pi*(0.5*x^2-abs(x))),g*$pi*x/(1+g*$pi*abs(x)),x*(27+x*x)/(27+9*x*x),z+x^slider8/slider9,(2shiftright1)*atan(x)*0.6333,(z+x^slider8)*w or x^slider9,tanh0(x),cosh(x),((1+a)*x+b*x^2+c*x^3)/((1+a)+b+c)}>-mode    ---harm---
 slider21:1<0,1,1{off,on}>-z (fundamental)
 slider22:0<0,48,1>-pre-gain (dB)
 slider23:2<2,10,.1>-slider8
@@ -57,6 +59,23 @@ slider28:1<1,20,0.01>-g
 slider29:0<-1,1,0.000001>-L offset (r/o)
 slider30:0<-1,1,0.000001>-R offset (r/o)
 slider31:-6<-48,0,1>-post-gain (dB)
+
+slider32:-80<-120,0,1>-(Better) Input Gate (dB)    ---sa---
+slider33:5<-9,18,0.1>-Pre-Input Gain (Post-Gate) (dB)
+slider34:0<0,100,0.01>-Dual-Stage Drive
+slider35:-2.5<-36,0,.1>-Mid-Stage CutBack (dB)
+slider36:-6<-120,0,1>-OutPut Tone Adjust (dB)
+
+slider37:-80<-120,0,1>-Input Gate (dB)    ---etf---
+slider38:0<-9,18,0.1>-Pre-Drive Input Gain (dB)
+slider39:0<0,100,0.01>-Stage Drive Gain (Percent)
+slider40:0<-18,0,.1>-Mid-Stage CutBack (dB)
+slider41:0<-12,12,.1>-Output Bass
+slider42:0<-12,12,.1>-Output Mid
+slider43:0<-12,12,.1>-Output Treble
+slider44:0<-12,12,.1>-Output High Treble
+slider45:0<0,1,1{Amp Head,Stompbox}>-Operational Mode
+slider46:1<0,2,1{Single-Stage,Dual-Stage,Triple-Stage}>-Overdrive Stages
 
 //switchers
 slider61:0<0,1,1{Off,On}>-Limit
@@ -79,6 +98,52 @@ freemem = bufferpeak + bufferlength;
 freemem = ui_setup(freemem); // returns the first index it's not using
 ///////////////////////
 
+//od
+filt1 = filt2 = 0;
+
+//tube
+drive.smooth = drive(slider14);
+pdc_bot_ch = 0; pdc_top_ch = 2;
+delay[0] = 0;
+delay[1] = 3;
+delay[2] = 4;
+delay[3] = 4;
+hp0.a = hp1.rc_set(0.022);
+
+//harm
+ext_nodenorm=1;
+itm1=slider29;
+itm2=slider30;
+otm1=otm2=0;
+m1=m0=0;
+
+//sa
+sa_cDenorm=10^-30;
+sa_splitLow=600;
+sa_splitHigh=2400;
+sa_silentcnt=0;
+sa_seekv=1; sa_seekto=1;
+sa_gateFadeIn=10;
+sa_gateFadeOut=100;
+
+//etf
+etf_cDenorm=10^-30;
+etf_lbq=-32;         // etf_lbq, etf_mbq, and etf_hbq are the maximum change in dB that
+etf_mbq=2.5;         // the post-gate input can change as it enters the overdrive
+etf_hbq=-64;         // stage, which are low, mid, and high respectively, although
+etf_band1=2^(etf_lbq)/6; // they don't always reach these maximum limits, the actual EQ
+etf_band2=2^(etf_mbq)/6; // change varies depending on how hot the input signal is.  The
+etf_band3=2^(etf_hbq)/6; // actual EQ change right before overdrive is from 0 to these values.
+etf_silentcnt=0;
+etf_seekv=1; etf_seekto=1;
+etf_splitLow=600;    // etf_splitLow and etf_splitHigh are where the edges of the
+etf_splitHigh=2400;  // pre-overdrive EQ bands are.  (Three bands total.)
+etf_gateFadeIn=10;
+etf_gateFadeOut=100;
+etf_toneLow=600;     // toneLow and etf_toneHigh are where the edges of the output
+etf_toneHigh=3000;   // (post-overdrive) EQ bands are. (Three bands total.)
+etf_toneVHigh=16000;
+
 draw_wavescopeinit();
 
 function slider_update()
@@ -86,14 +151,6 @@ function slider_update()
 needs_slider_update=0;
 
 outgain = 10^(slider62/20);
-
-slider64 == 3 ? (
-odinit();
-) : slider64 == 4 ? (
-tubeinit();
-) : slider64 == 6 ? (
-harminit();
-);
 
 slider64 == 0 ? ( 
 fuzzslider();
@@ -109,7 +166,10 @@ tubeslider();
 tube2slider();
 ) : slider64 == 6 ? (
 harmslider();
-slider61=1;
+) : slider64 == 7 ? (
+saslider();
+) : slider64 == 8 ? (
+etfslider();
 );
 
 slider63 < 1 ? (
@@ -150,6 +210,10 @@ tubesample();
 tube2sample();
 ) : slider64 == 6 ? (
 harmsample();
+) : slider64 == 7 ? (
+sasample();
+) : slider64 == 8 ? (
+etfsample();
 );
 
 draw_wavescopesample();
@@ -168,9 +232,9 @@ control_start("main", "bitmap-simple", file);
 ui_screen() == "main" ? (
 title_desc("Drivers", "processing | distortion | saturation");
 
-        ui_split_leftratio(.2);
+        ui_split_leftratio(.15);
             control_group("");
-            ui_split_topratio(1/7);
+            ui_split_topratio(1/9);
                 ui_automate(slider64, multipleway_switch(slider64, "fuzz", 0, 20, 12));
             ui_split_next();
                 ui_automate(slider64, multipleway_switch(slider64, "distort", 1, 20, 12));
@@ -184,6 +248,10 @@ title_desc("Drivers", "processing | distortion | saturation");
                 ui_automate(slider64, multipleway_switch(slider64, "tube2", 5, 20, 12));
             ui_split_next();
                 ui_automate(slider64, multipleway_switch(slider64, "harm", 6, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "sa", 7, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "etf", 8, 20, 12));
             ui_pop();
         ui_pop();
         
@@ -205,6 +273,10 @@ title_desc("Drivers", "processing | distortion | saturation");
             tube2gfx();
         ) : slider64 == 6 ? (
             harmgfx();
+        ) : slider64 == 7 ? (
+            sagfx();
+        ) : slider64 == 8 ? (
+            etfgfx();
         );
         
         ui_pop();
@@ -234,6 +306,8 @@ title_desc("Drivers", "processing | distortion | saturation");
     -tube = tube_amp by tale
     -tube2 = tube_thingy by witti
     -harm = harmonics by witti
+    -sa = scarlet avenger by destructavator
+    -etf = emerald thunder falcon by destructavator
 
 editor: JPH
 -GUI (using Geraint Luff's API)");

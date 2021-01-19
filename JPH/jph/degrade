@@ -1,0 +1,317 @@
+desc: Degrade - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+import /deg_inc/adpcm_simulator.jsfx-inc
+import /deg_inc/bitcrusher.jsfx-inc
+import /deg_inc/mda_degrade_01.jsfx-inc
+import /deg_inc/mdct-shift.jsfx-inc
+import /deg_inc/signal_crusher.jsfx-inc
+import /deg_inc/telephone.jsfx-inc
+import /deg_inc/tonifier2.jsfx-inc
+
+slider1:4<1,4,1>-Bits    ---adpcm---
+slider2:4096<2,65538,128>-Block Size
+slider3:0<0,7,1>-Bit Bias (mostly for 1-bit)
+
+slider4:16<1,16,1>-Bit Reduction    ---bitcrush---
+slider5:22050<100,22050,50>-Freq Reduction (Hz)
+slider6:0<0,100,1>-Filter (%)
+
+slider7:1<0,1,0.01>-clip    ---witty---
+slider8:1<0,1,0.01>-quant
+slider9:0.5<0,1,0.01>-rate
+slider10:1<0,1,0.01>-post filter
+slider11:0.5<0,1,0.01>-non-linearity
+
+slider12:128<32,512,153.6>-Bands    ---mdct---
+slider13:0<-512,512,1>-Band Shift (neg=down, pos=up)
+
+slider14:down=1<0,4,{Off,Repeat samples,Drop samples,Linear interpolation,Cosine interpolation}> -Downsampling    ---signalcrush---
+slider15:dnFilt=1<0,2,{Off,Pre,Post}> -Downsampling filter
+slider16:up=0<0,2,{Off,Linear interpolation,Cosine interpolation}> -Reconstruction
+slider17:upFilt=0<0,2,{Off,Pre,Post}> -Reconstruction filter
+slider18:ratio=20<32,1,1> -Resampling factor [SR / x]
+slider19:outSR=0<0,0,0.01> -Downsampled to [Hz]
+slider20:bits=10<0,24,0.001> -Bit reduction
+slider21:dither=100<0,100,0.01> -Bit dithering [%]
+slider22:blank=1<0,1,{Off,On}> -Auto blanking
+
+slider23:channels=0<0,3,{Stereo,Mono [L], Mono [R], Mono summed [L+R]}>-Audio routing    ---telephone---
+slider24:threshold=-40<-60,0,0.1>-Compression [dBfs]
+slider25:blank2=1<0,1,{Constant,Auto-Blanking}>-Noise & Crackle
+slider26:dBnoise=-60<-144,0,0.1>-Noise [dBfs]
+slider27:dBcrackle=-24<-144,0,0.1>-Crackle [dBfs]
+slider28:pctCrackle=25<0,100,1>-Crackle [%]
+slider29:HzFreq=1750<1000,3000,1>-Filter [Hz]
+slider30:width=3.5<1.0,6.0,0.01>-Filter [Q]
+slider31:dBdrive=0.0<-12,12,0.1>-Drive [dBfs]
+slider32:dBtrim=0<-12,12,0.01>-Trim [dBfs]
+slider33:outClip=1<0,1,{Overshoot,Clip}>-Overshoot
+
+slider34:0.995<0.96,1>-Amplitude Falloff (factor)    ---tonifier---
+slider35:0<-48,48,1>-Frequency Shift (st)
+slider36:4<0,6,1>-max auto shift (octaves)
+slider37:100<0,20000>-auto shift min frequency (Hz)
+slider38:300<0,20000>-auto shift max frequency (Hz)
+slider39:0,-Output frequency (Hz)
+
+//switchers
+slider61:0<0,1,1{Off,On}>-Limit
+slider62:0<-12,12,.1>-Output
+slider63:0<0,6,1>-Theme
+slider64:0<0,9,1>-Switch
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+//adpcm
+a=1000000;
+
+// build tables
+index_table = a;
+a[] = -1; a+=1; a[] = -1; a+=1; a[] = -1; a+=1; a[] = -1; a+=1; a[] = 2; 
+a+=1; a[] = 4; a+=1; a[] = 6; a+=1; a[] = 8; a+=1;
+
+step_table=a;
+a[]=7; a+=1; a[]=8; a+=1; a[]=9; a+=1; a[]=10; a+=1; a[]=11; a+=1;
+a[]=12; a+=1; a[]=13; a+=1; a[]=14; a+=1; a[]=16; a+=1; a[]=17; a+=1;
+a[]=19; a+=1; a[]=21; a+=1; a[]=23; a+=1; a[]=25; a+=1; a[]=28; a+=1;
+a[]=31; a+=1; a[]=34; a+=1; a[]=37; a+=1; a[]=41; a+=1; a[]=45; a+=1;
+a[]=50; a+=1; a[]=55; a+=1; a[]=60; a+=1; a[]=66; a+=1; a[]=73; a+=1;
+a[]=80; a+=1; a[]=88; a+=1; a[]=97; a+=1; a[]=107; a+=1; a[]=118; a+=1;
+a[]=130; a+=1; a[]=143; a+=1; a[]=157; a+=1; a[]=173; a+=1; a[]=190; a+=1;
+a[]=209; a+=1; a[]=230; a+=1; a[]=253; a+=1; a[]=279; a+=1; a[]=307; a+=1;
+a[]=337; a+=1; a[]=371; a+=1; a[]=408; a+=1; a[]=449; a+=1; a[]=494; a+=1;
+a[]=544; a+=1; a[]=598; a+=1; a[]=658; a+=1; a[]=724; a+=1; a[]=796; a+=1;
+a[]=876; a+=1; a[]=963; a+=1; a[]=1060; a+=1; a[]=1166; a+=1; a[]=1282; a+=1;
+a[]=1411; a+=1; a[]=1552; a+=1; a[]=1707; a+=1; a[]=1878; a+=1; a[]=2066; a+=1;
+a[]=2272; a+=1; a[]=2499; a+=1; a[]=2749; a+=1; a[]=3024; a+=1; a[]=3327; a+=1;
+a[]=3660; a+=1; a[]=4026; a+=1; a[]=4428; a+=1; a[]=4871; a+=1; a[]=5358; a+=1;
+a[]=5894; a+=1; a[]=6484; a+=1; a[]=7132; a+=1; a[]=7845; a+=1; a[]=8630; a+=1;
+a[]=9493; a+=1; a[]=10442; a+=1; a[]=11487; a+=1; a[]=12635; a+=1;
+a[]=13899; a+=1; a[]=15289; a+=1; a[]=16818; a+=1; a[]=18500; a+=1;
+a[]=20350; a+=1; a[]=22385; a+=1; a[]=24623; a+=1; a[]=27086; a+=1;
+a[]=29794; a+=1; a[]=32767; a+=1;
+
+blockpos=0;
+
+state0 = state1 = 0;
+last0 = last1 = 0;
+
+//bitcrush
+phasorA = 0;
+phasorB = 0;
+lastA = 0;
+lastB = 0;
+
+//witty
+buf0 = buf1 = buf2 = buf3 = buf4 = buf5 = buf6 = buf7 = buf8 = buf9 = 0;
+
+// Signal crusher
+// Setting up the auto-blanking envelopes
+evnAutoBlankL.envSetup(10, 300);
+envAutoBlankR.envSetup(10, 300);
+
+//telephone
+  pi = $PI;
+  halfPi = pi * 0.5;
+  
+  // Fixed compression settings
+  compTopAttack  = 10.0;
+  compTopRelease = 10.0;
+  
+  compLowAttack  = 1.0;
+  compLowRelease = 100.0;
+  
+  compRatio      = 30.0;
+  autoGain       = 0; // 0 = enabled, 1 = disabled
+  
+  // Compressor sidechain HP filter settings
+  compHPfreq = 750;
+  compHPwide = 1.0;
+  
+  // Two HP filters for compressor sidechain
+  hpL.eqHP(compHPfreq, compHPwide);
+  hpR.eqHP(compHPfreq, compHPwide);
+
+function slider_update()
+(
+needs_slider_update=0;
+outgaina = 10^(slider62/20);
+
+slider64 == 0 ? ( 
+adpcmslider();
+) : slider64 == 1 ? ( 
+bitcrushslider();
+) : slider64 == 2 ? ( 
+wittislider();
+) : slider64 == 3 ? ( 
+mdctslider();
+) : slider64 == 4 ? ( 
+signalslider();
+) : slider64 == 5 ? ( 
+teleslider();
+) : slider64 == 6 ? ( 
+tonislider();
+);
+
+slider63 < 1 ? (
+    file=0;
+) : slider63 < 2 ? (
+    file=1;
+) : slider63 < 3 ? (
+    file=2;
+) : slider63 < 5 ? (
+    file=3;
+) : slider63 < 6 ? (
+    file=4;
+) : slider63 < 7 ? (
+    file=5;
+);
+
+);
+
+@slider
+needs_slider_update=1;
+
+@block
+needs_slider_update ? slider_update();
+slider64 == 6 ? (
+toniblock();
+);
+
+@sample 
+slider64 == 0 ? (
+adpcmsample();
+) : slider64 == 1 ? (
+bitcrushsample();
+) : slider64 == 2 ? (
+wittisample();
+) : slider64 == 3 ? (
+mdctsample();
+) : slider64 == 4 ? (
+signalsample();
+) : slider64 == 5 ? (
+telesample();
+) : slider64 == 6 ? (
+tonisample();
+);
+
+spl0*=outgaina;
+spl1*=outgaina;
+
+slider61 == 1 ? (
+    spl0 = min(max(spl0,-0.98),0.98);
+    spl1 = min(max(spl1,-0.98),0.98);
+);
+
+@gfx 800 300
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Degrade", "processing | bitcrush | downsample");
+
+        ui_split_leftratio(.2);
+            control_group("");
+            ui_split_topratio(1/7);
+                ui_automate(slider64, multipleway_switch(slider64, "adpcm", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "bitcrush", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "witty", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "mdct", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "signalcrush", 4, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "telephone", 5, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "tonifier", 6, 20, 12));
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.8);
+        control_group("");
+                
+        slider64 == 0 ? (
+            adpcmgfx();
+        ) : slider64 == 1 ? (
+            bitcrushgfx();
+        ) : slider64 == 2 ? (
+            wittigfx();
+        ) : slider64 == 3 ? (
+            mdctgfx();
+        ) : slider64 == 4 ? (
+            signalgfx();
+        ) : slider64 == 5 ? (
+            telegfx();
+        ) : slider64 == 6 ? (
+            tonigfx();
+        );
+        
+        ui_pop();
+
+                //out
+                control_group("");
+                ui_split_bottomratio(0.2);
+                    ui_automate(slider61, labelled_switch_mid(slider61, "", "limit"));
+                ui_pop();
+                    ui_automate(slider62, labelled_dial(slider62, 0, -24, 24, 0, "out", slider62, "%i dB", 50,50,14));
+                ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 12, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX:
+    -adpcm = adpcm_simulator by cockos
+    -bitcrush = bitcrusher by witti
+    -witty = mda_degrad_01 by witti
+    -mdct = mdct_shift by cockos
+    -signalcrush = signal_crusher by chokehold
+    -telephone = telephone by chokehold
+    -tonifier = tonifier2 by cockos
+
+editor: JPH
+-Red dials indicate that they work a bit differently from others:
+      -left mouse button = increase value
+      -right mouse button = decrease value
+      -middle mouse button = set to default
+-GUI (using Geraint Luff's API)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider63 = labelled_dial(slider63, 0, 0, 6, 0, "theme", slider63, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

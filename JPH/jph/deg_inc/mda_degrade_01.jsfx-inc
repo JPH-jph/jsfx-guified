@@ -1,0 +1,141 @@
+// mod with different 'rate' fader range...
+//witti
+
+@init
+
+
+function filterFreq(hz) (
+r = 0.999;
+j = r * r - 1;
+k = (2 - 2 * r * r * cos(0.647 * hz / srate ));
+((sqrt(k*k - 4*j*j) - k) / (2*j));
+);
+
+function wittislider() (
+fParam1 = slider7; //headroom
+fParam2 = slider8; //quant
+fParam3 = slider9; //rate
+fParam4 = slider10; //postfilt
+fParam5 = slider11; //non-lin
+fParam6 = 0.5; //output
+
+/*
+(fParam3>0.5) ? (
+f = fParam3 - 0.5;
+mode = 1;
+):(
+f = 0.5 - fParam3;
+mode = 0;
+);
+tn = exp(18 * f)|0;
+*/
+
+(fParam3>0.5) ? (
+tn = (18 * fParam3 - 8)|0;
+mode = 1;
+):(
+tn = (10 - 18 * fParam3)|0;
+mode = 0;
+);
+
+tcount = 1;
+
+clip = pow(10,(-1.5 + 1.5 * fParam1));
+
+fo2 = filterFreq(pow(10, 2.30104 + 2*fParam4));
+
+fi2 = 1-fo2;
+fi2 = fi2*fi2;
+fi2 = fi2*fi2;
+
+_g1 = pow(2, 2 + (fParam2*12)|0);
+g2 = 1/(2 * _g1);
+
+(fParam3>0.5) ? (
+g1 = -_g1/tn;
+):(
+g1 = -_g1;
+); 
+
+g3 = pow(10, 2*fParam6 - 1);
+
+(fParam5>0.5) ? (
+lin = pow(10, 0.3 * (0.5 - fParam5));
+lin2 = lin;
+):(
+lin = pow(10, 0.3 * (fParam5 - 0.5));
+lin2 = 1;
+);
+);
+
+function wittisample() (
+b0=buf0;
+b1=buf1;
+b2=buf2;
+b3=buf3;
+b4=buf4;
+b5=buf5;
+b6=buf6;
+b7=buf7;
+b8=buf8;
+b9=buf9;
+
+b0 = (spl0 + spl1) + mode * b0;
+
+(tcount == tn) ? (
+tcount = 0;
+b5 = -(g2 * ((b0 * g1)|0)); // -() ???
+(b5>0) ? (
+b5=pow(b5,lin2); (b5>clip) ? b5=clip;
+):(
+b5=-pow(-b5,lin); (b5<-clip) ? b5=-clip;
+);
+b0 = 0;
+);
+tcount = tcount+1;
+
+b1 = fi2 * (b5 * g3) + fo2 * b1;
+b2 = b1 + fo2 * b2;
+b3 = b2 + fo2 * b3;
+b4 = b3 + fo2 * b4;
+b6 = fi2 * b4 + fo2 * b6;
+b7 = b6 + fo2 * b7;
+b8 = b7 + fo2 * b8;
+b9 = b8 + fo2 * b9;
+
+c = b9;
+d = b9;
+
+spl0 = c;
+spl1 = d;
+
+(abs(b1)<0.0000000001) ? (
+buf1=0; buf2=0; buf3=0; buf4=0; buf6=0; buf7=0; buf8=0; buf9=0; buf0=0; buf5=0;
+):( 
+buf1=b1; buf2=b2; buf3=b3; buf4=b4; buf6=b6; buf7=b7; buf8=b8; buf9=b9; buf0=b0; buf5=b5;
+);
+);
+
+function wittigfx() (
+        ui_split_leftratio(1/5);
+            ui_automate(slider7, labelled_dial(slider7, 1, 0, 1, 0, "clip", -30*(1-slider7), "%.1f dB", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider8, labelled_dial(slider8, 1, 0, 1, 0, "quant", 4+12*slider8, "%.i bits", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider9, labelled_dial(slider9, 0.5, 0, 1, 0, "rate", srate/tn, "%.i Hz", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider10, labelled_dial(slider10, 1, 0, 1, 0, "filter", (pow(10, 2.30104 + 2*slider10)), "%.i Hz", 50,50,12));
+            uix_control_color_from_theme(151, 30);
+			gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_split_next();
+            ui_automate(slider11, labelled_dial(slider11, 0.5, 0, 1, 0, "non lin", (200 * abs(slider11 - 0.5)), "%.i", 50,50,12));
+        ui_pop();
+);
+
+

@@ -1,0 +1,58 @@
+// upward compressor
+//witti
+
+@init
+
+function upwardslider () (
+threshold = 10^(slider32/20);
+
+transfer_A = (1/slider33)-1;
+transfer_B = output * pow(threshold,-transfer_A);
+
+attack = exp(-1/(slider34/1000*srate));
+release = exp(-1/(slider35/1000*srate));
+envelope_decay = exp(-1/(slider36/1000*srate));
+
+vol = 10^(0/20);
+);
+
+function upwardsample() (
+inL = spl0;
+inR = spl1;
+
+det = max(abs(inL),abs(inR));
+env = det >= env ? det : det+envelope_decay*(env-det);
+transfer_gain = (env > gate) && (env < threshold) ? pow(env,transfer_A)*transfer_B: output;
+gain = transfer_gain < gain ? transfer_gain+attack*(gain-transfer_gain) : transfer_gain+release*(gain-transfer_gain);
+
+spl0 = inL * gain * vol;
+spl1 = inR * gain * vol;
+
+gr = -log(gain)*log2dB;
+grv = exp(gr*db2log);
+
+slider60 = gr;
+(det > gate) && (grv < gr_meter) ? gr_meter=grv : ( gr_meter*=gr_meter_decay; gr_meter>1?gr_meter=1; );
+);
+
+function upwardgfx() (
+ui_split_topratio(2/3);
+    control_group("");
+        ui_split_leftratio(1/5);
+            ui_automate(slider32, labelled_dial(slider32, -120, -120, 0, 0, "threshold", slider32, "%.1f dB", 50, 50, 12));
+        ui_split_next();
+            ui_automate(slider33, labelled_dial(slider33, 2, 1, 20, 0, "ratio", slider33, "%.1f", 50, 50, 12));
+        ui_split_next();
+            ui_automate(slider34, labelled_dial(slider34, 3, 1, 20, 0, "attack", slider34, "%.i ms", 50, 50, 12));
+        ui_split_next();
+            ui_automate(slider35, labelled_dial(slider35, 100, 20, 1000, 0, "release", slider35, "%.i ms", 50, 50, 12));
+        ui_split_next();
+            ui_automate(slider36, labelled_dial(slider36, 50, 10, 100, 0, "decay", slider36, "%.i ms", 50, 50, 12));
+        ui_pop();
+   
+
+ui_split_next();
+control_group("");
+        ui_automate(slider60, labelled_meter2(slider60, 0, -50, 0, "output", slider60, "%.1f dB", 0));
+ui_pop();
+);

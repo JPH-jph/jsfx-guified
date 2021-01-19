@@ -2,10 +2,6 @@
 
 @init
 
-function odinit() (
-filt1 = filt2 = 0;
-);
-
 function odslider() (
 fParam1 = slider11;
 fParam2 = slider12;

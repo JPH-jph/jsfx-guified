@@ -1,0 +1,345 @@
+desc: Comps - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+import /comp_inc/1175.jsfx-inc
+import /comp_inc/dirtsqueeze.jsfx-inc
+import /comp_inc/track_comp.jsfx-inc
+import /comp_inc/majortom.jsfx-inc
+import /comp_inc/mastertom.jsfx-inc
+import /comp_inc/w_comp_up.jsfx-inc
+import /comp_inc/w_expander_down.jsfx-inc
+import /comp_inc/expressbus.jsfx-inc
+import /comp_inc/bus_comp.jsfx-inc
+
+slider1:0<-60,0,0.1>-Threshold (dB)    ---1175---
+slider2:1<0,3,1{4,8,12,20,All}>-Ratio
+slider3:0<-20,20,0.1>-Gain (dB)
+slider4:20<20,2000,10>-Attack (és)
+slider5:250<20,1000,1>-Release (ms)
+
+slider6:0<-60,0,0.1>-Threshold (dB)    ---dirt---
+slider7:1<1,20,0.1>-Ratio
+slider8:0<0,1,1{No,Yes}>-Automatic Make-Up
+slider9:0<-20,20,0.1>-Manual Gain
+
+slider10: dBGain=0<-12, 12, 0.01> -Input Gain [dB]    ---track---
+slider11: compFeedbk=25<0, 100, 0.01> -Feedback [%]
+slider12: compThresh=0<-60, 0, 0.01> -Threshold [dB]
+slider13: compRatio=4<0.1, 20, 0.1> -Ratio [x:1]
+slider14: compAttack=10<0.001, 100, 0.01> -Attack [ms]
+slider15: compRelease=200<20, 1500, 0.01> -Release [ms]
+slider16: compWindow=0<0,150,0.01> -RMS Window [ms]
+slider17: compKnee=4.5<0,12,0.01> -Hard/Soft Knee [dB]
+slider18: compRange=-40<-50, 0, 0.01> -Comp. Range [dB]
+slider19:linkAmount=50<0, 100, 1> -Stereo Link [%]
+slider20:scFreq=70<20, 350, 1> -SC High Pass [Hz]
+slider21:autoGain=0<0,1,{Enabled,Disabled}> -Auto Makeup Gain
+slider22:saturation=25<0,100,0.01> -Saturation [%]
+slider23:routing=0<0, 3,{Stereo (internal SC),Stereo (external SC 3-4),Mono (L),Mono (R),Mono (signal L / key R),Mono (key L / signal R)}> -Routing
+
+slider24:0<-60,0,0.1>-Threshold (dB)    ---major/master/expressbus---
+slider25:1<1,20,0.1>-Ratio
+slider26:0<-20,20,0.1>-Gain
+slider27:0<0,1,1{Hard,Soft}>-Knee
+slider28:0<0,1,1{Normal,Sidechain}>-Detector Input
+slider29:0<0,1,1{No,Yes}>-Automatic Make-Up
+slider30:0<0,1,1{Peak,RMS}>-Detection
+slider31:0<0,1,1{Feedforward,Feedback}>-Detection Source
+
+slider32:-120<-120,0,0.1>-Threshold (dB)    ---upward/downward---
+slider33:2<1,20,0.1>-Ratio
+slider34:3<1,20,0.1>-Attack (ms)
+slider35:100<20,1000,1>-Release (ms)
+slider36:50<10,100,1>-Env Decay (ms)
+slider37:0.5<0,1,0.001>-Ratio Downward
+
+slider38: dBGain2=0<-12, 12, 0.01>-Input gain [dB]    ---bus---
+slider39: compThresh2=0<-60, 0, 0.01>-Threshold [dB]
+slider40: rawRatio=3<0, 6, {1.5,2,3,4,5,10,20}>-Ratio [x:1]
+slider41: rawAttack=4<0, 5, {0.1,0.3,1,3,10,30}>-Attack [ms]
+slider42: rawRelease=6<0, 6, {0.1,0.2,0.4,0.8,1.6,3.2,Auto}>-Release [s]
+slider43: sidechain2=0<0, 1, {Internal (inputs 1+2),External (inputs 3+4)}>-Sidechain
+slider44: scFreq2=75<20, 500, 1>-SC high pass [Hz]
+slider45: midSide=0<0,1,{Stereo (L+R),Mid/Side (M+S)}>-Channel routing
+slider46: linkAmount2=100<0, 100, 1>-Stereo link [%]
+slider47:instability=100<0,100,0.01>-Instability [%]
+slider48:saturation2=100<0,100,0.01>-Saturation [%]
+
+//switchers
+slider60:0,-Reduction (dB)
+slider61:0<0,1,1{Off,On}>-Limit
+slider62:0<-12,12,.1>-Output
+slider63:0<0,6,1>-Theme
+slider64:0<0,9,1>-Switch
+
+in_pin:left input
+in_pin:right input
+in_pin:External SC / L
+in_pin:External SC / R
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 0;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+//1175
+log2db = 8.6858896380650365530225783783321; // 20 / ln(10)
+db2log = 0.11512925464970228420089957273422; // ln(10) / 20 
+attime=0.010;
+reltime=0.100;
+ratio=0;
+cratio=0;
+rundb=0;
+overdb=0;
+ratatcoef = exp(-1/(0.00001 * srate));
+ratrelcoef = exp(-1/(0.5 * srate));
+atcoef=exp(-1/(attime * srate));
+relcoef=exp(-1/(reltime * srate));
+mix=1;
+gr_meter=1;
+gr_meter_decay = exp(1/(1*srate)); 
+
+//dirt
+  i=0;
+  loop(
+    120,
+    attimes[i] = ((0.08924 / i) + (0.60755 / (i ^ 2)) - 0.00006)*srate;
+    i+=1;
+  );
+overthresh = 0;
+compressing = 0;
+relfactor = 2 ^ (-20.833333333 / srate);
+attime2=0;
+atctr=0;
+maxover=0;
+relctr=0;
+
+//track
+M_LN10_20 = 8.68588963806503655302257837833210164588794011607333;
+floatFloor = 0.0000000630957; // dBToGain --> ~ -144 dBfs
+halfPi = $PI * 0.5;
+satSpeed = 50.0;  // ms timing for saturation envelope follower
+
+satL.satSetup(satSpeed);
+satR.satSetup(satSpeed);
+  
+dcBlockerL = dcBlockerR = 0.0;
+
+//major
+  f=0;
+  loop(
+    120,
+    attimes2[f] = ((0.08924 / f) + (0.60755 / (f ^ 2)) - 0.00006);
+    f+=1;
+  );
+  
+fbacoef=exp(-1000/(2 * srate)); // 2 msec. opto attack for feedback detection
+fbrcoef=exp(-1000/(200 * srate)); // 200 msec. opto release for feedback detection
+sidechain = 0;
+automakeup = 0;
+
+//master
+reltime2=5;
+
+//upward
+output = 1;
+transfer_A = 0;
+transfer_B = 1;
+gain = 1;
+env = 0;
+gate = 10^(-120/20); // raw, can be improved...
+
+//bus
+noiseFloor = 0.00001258925412; // dBToGain --> ~  -98 dBfs
+rcpSqrt2 = 0.7071067812; // Reciprocal constant 1.0 / sqrt(2.0)
+compFeedback = 0.15;
+noiseState = 10000;
+
+function slider_update()
+(
+needs_slider_update=0;
+outgaina = 10^(slider62/20);
+
+slider64 == 0 ? ( 
+elevenslider();
+) : slider64 == 1 ? (
+dirtslider();
+) : slider64 == 2 ? (
+trackslider();
+) : slider64 == 3 ? (
+majorslider();
+) : slider64 == 4 ? (
+masterslider();
+) : slider64 == 5 ? (
+upwardslider();
+) : slider64 == 6 ? (
+downwardslider();
+) : slider64 == 7 ? (
+expressslider();
+) : slider64 == 8 ? (
+busslider();
+);
+
+
+slider63 < 1 ? (
+    file=0;
+) : slider63 < 2 ? (
+    file=1;
+) : slider63 < 3 ? (
+    file=2;
+) : slider63 < 5 ? (
+    file=3;
+) : slider63 < 6 ? (
+    file=4;
+) : slider63 < 7 ? (
+    file=5;
+);
+
+);
+
+@slider
+needs_slider_update=1;
+
+@block
+needs_slider_update ? slider_update();
+
+@sample
+slider64 == 0 ? (
+elevensample();
+) : slider64 == 1 ? (
+dirtsample();
+) : slider64 == 2 ? (
+tracksample();
+) : slider64 == 3 ? (
+majorsample();
+) : slider64 == 4 ? (
+mastersample();
+) : slider64 == 5 ? (
+upwardsample();
+) : slider64 == 6 ? (
+downwardsample();
+) : slider64 == 7 ? (
+expresssample();
+) : slider64 == 8 ? (
+bussample();
+);
+
+spl0*=outgaina;
+spl1*=outgaina;
+
+slider61 == 1 ? (
+    spl0 = min(max(spl0,-0.98),0.98);
+    spl1 = min(max(spl1,-0.98),0.98);
+);
+
+@gfx 800 450
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Comps", "processing | guitar | cabinets");
+
+        ui_split_leftratio(.15);
+            control_group("");
+            ui_split_topratio(1/9);
+                ui_automate(slider64, multipleway_switch(slider64, "1175", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "dirt", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "track", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "major", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "master", 4, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "up", 5, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "down", 6, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "express", 7, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "bus", 8, 20, 12));
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.85);
+                
+        slider64 == 0 ? (
+            elevengfx();
+        ) : slider64 == 1 ? (
+            dirtgfx();
+        ) : slider64 == 2 ? (
+            trackgfx();
+        ) : slider64 == 3 ? (
+            majorgfx();
+        ) : slider64 == 4 ? (
+            mastergfx();
+        ) : slider64 == 5 ? (
+            upwardgfx();
+        ) : slider64 == 6 ? (
+            downwardgfx();
+        ) : slider64 == 7 ? (
+            expressgfx();
+        ) : slider64 == 8 ? (
+            busgfx();
+        );
+        
+        ui_pop();
+        
+
+                //out
+                control_group("");
+                ui_split_bottomratio(0.2);
+                    ui_automate(slider61, oneway_switch_midb(slider61, "limit", 20, 12));
+                ui_pop();
+                    ui_automate(slider62, labelled_dial(slider62, 0, -24, 24, 0, "out", slider62, "%i dB", 50,50,14));
+                ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 16, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX compressors:
+    -1175 = 1175 by stillwell
+    -dirt = dirtsqueeze by stillwell
+    -track = track_comp by chokehold
+    -major = majortome by stillwell
+    -master = mastertom by stillwell
+    -up = w_comp_up by witti
+    -down = w_expander_down by witti
+    -express = expressbus by stillwell
+    -bus = bus_comp by chokehold
+
+editor: JPH
+-GUI (using Geraint Luff's API)");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider63 = labelled_dial(slider63, 0, 0, 6, 0, "theme", slider63, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;

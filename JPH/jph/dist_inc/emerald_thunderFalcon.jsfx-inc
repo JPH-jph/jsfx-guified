@@ -1,0 +1,162 @@
+// desc:(M->S) Guitar Amp Head/Stompbox v0.6
+
+@init
+
+function etfslider() (
+pregate=2 ^ (slider37/6);
+preGain=2 ^ (slider38/6);
+selectedDist = min(slider39/100,.999);
+distGain = 2*selectedDist/(1-selectedDist);
+midCut=2 ^ (slider40/6);
+slider45 == 0 ?
+(
+  toneControlL=2 ^ ((slider41+22.5)/6);
+  toneControlM=2 ^ (((slider42*4)-8)/6);
+  toneControlH=2 ^ ((slider43+26)/6);
+  toneControlVH=2 ^ ((slider44*2)/6);
+  mstrOut=2 ^ ((0-18)/6);
+) : (
+  toneControlL=2 ^ (slider41/6);
+  toneControlM=2 ^ (slider42/6);
+  toneControlH=2 ^ (slider7/6);
+  toneControlVH=2 ^ ((slider43*2)/6);
+  mstrOut=2 ^ ((0+2)/6);
+);
+stageNumbers=slider46+1;
+
+freqHP = min(etf_splitHigh,srate);      // All of this schtuff here is used for
+xHP = exp(-2.0*$pi*freqHP/srate);    // figuring out exactly where the EQ
+a0HP = 1.0-xHP;          // bands stop and start depending on
+b1HP = -xHP;          // frequency, sample rate, etc.
+
+freqLP = min(min(etf_splitLow,srate),etf_splitHigh);
+xLP = exp(-2.0*$pi*freqLP/srate);
+a0LP = 1.0-xLP;
+b1LP = -xLP;
+
+freqHI = max(min(etf_toneVHigh,srate),etf_toneHigh);
+xHI = exp(-2.0*$pi*freqHI/srate);
+a0HI = 1.0-xHI;
+b1HI = -xHI;
+
+freqMID = max(min(min(etf_toneHigh,srate),etf_toneVHigh),toneLow);
+xMID = exp(-2.0*$pi*freqMID/srate);
+a0MID = 1.0-xMID;
+b1MID = -xMID;
+
+freqLOW = min(min(toneLow,srate),etf_toneHigh);
+xLOW = exp(-2.0*$pi*freqLOW/srate);
+a0LOW = 1.0-xLOW;
+b1LOW = -xLOW;
+
+sillen=50*srate/1000;        // Noise-gate related code
+fadeout = 1/pow(10,1/(srate*etf_gateFadeOut/1000));
+fadein  = 1/pow(10,1/(srate*etf_gateFadeIn/1000));
+);
+
+function etfsample() (
+a=abs(spl0) > preGate;        // Noise-gate related code
+a ? 
+(
+   etf_silentcnt=0; 
+   etf_seekto=1;
+) : (
+   (etf_silentcnt+=1) > sillen ?  etf_seekto=0;
+);
+etf_seekto > 0.5 ? 
+( // fading in
+  etf_seekv=etf_seekv*fadein + (1-fadein);
+)
+:
+( // fading out
+  etf_seekv=etf_seekv*fadeout;
+);            // (End of) Noise-gate related code
+
+spl0=spl0*etf_seekv*preGain;    // Once past the noise-gate, amplify the signal
+spl0 = min(max(spl0,-1),1);    // a tad, if accidentally set too high, clip! (gasp!)
+
+toneSpank=abs(spl0)*0.5;  // toneSpank determines how much to alter the tone based
+        // upon the input.
+s0 = spl0;
+lowSpl = (tmplLP = a0LP*s0 - b1LP*tmplLP + etf_cDenorm);       // This splits the signal into 3
+highSpl = s0 - (tmplHP = a0HP*s0 - b1HP*tmplHP + etf_cDenorm); // bands before overdrive.
+midSpl = s0 - lowSpl - highSpl;
+
+lowSpl=lowSpl*etf_band1*(1-toneSpank);  // The pre-overdrive tone is actually altered here.
+midSpl=midSpl*etf_band2;
+highSpl=highSpl*etf_band3*(toneSpank+0.5);
+
+spl0=(lowSpl+midSpl+highSpl);  // This puts the three bands back together right before...
+
+spl0 > 0 ? (spl0 = (1+distGain)*spl0/(1+distGain*spl0));   // ...OVERDRIVE!  OH, YEAH!
+stageNumbers > 1 ?
+(
+spl0=spl0*midCut;            // Cuts back before 2nd stage
+spl0 > 0 ? (spl0 = (1+distGain)*spl0/(1+distGain*spl0));
+);
+stageNumbers > 2 ?
+(
+spl0=spl0*midCut;            // Cuts back before 3rd stage
+spl0 > 0 ? (spl0 = (1+distGain)*spl0/(1+distGain*spl0));
+);
+
+s0 = spl0;
+low0 = (tmplMID = a0MID*s0 - b1MID*tmplMID + etf_cDenorm);
+spl0 = (tmplLOW = a0LOW*low0 - b1LOW*tmplLOW + etf_cDenorm);
+lowS0 = low0 - spl0;
+hi0 = s0 - low0;
+midS0 = (tmplHI = a0HI*hi0 - b1HI*tmplHI + etf_cDenorm);
+highS0 = hi0 - midS0;
+
+// lowSplx=lowSplx*toneControlL;    // This applies EQ to the output, controlled by
+// midSplx=midSplx*toneControlM;    // the GUI sliders.
+// highSplx=highSplx*toneControlH;
+
+// spl0=(lowSplx+midSplx+highSplx);  // Slam the adjusted 3 bands back together for output.
+
+// spl0=spl0*mstrOut;      // Apply master output volume.
+
+spl0 = (spl0*toneControlL + lowS0*toneControlM + midS0*toneControlH + highS0*toneControlVH)*mstrOut;
+
+spl1=spl0;        // Sends output to both L and R channels.
+);
+
+function etfgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_topratio(1/2);
+            ui_split_leftratio(1/4);
+                ui_automate(slider37, labelled_dial(slider37, -80, -120, 0, 0, "in gate", slider37, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(slider38, labelled_dial(slider38, 0, -9, 18, 0, "in gain", slider38, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(slider39, labelled_dial(slider39, 0, 0, 100, 0, "drive", slider39, "%.1f %%", 50,50,12));
+            ui_split_next();
+                ui_automate(slider40, labelled_dial(slider40, 0, -18, 0, 0, "mid cut", slider40, "%.1f dB", 50,50,12));
+            ui_pop();
+        ui_pop();
+        ui_split_leftratio(1/5);
+            ui_automate(slider41, labelled_dial(slider41, 0, -12, 12, 0, "bass", slider41, "%.1f dB", 40,40,11));
+        ui_split_next();
+            ui_automate(slider42, labelled_dial(slider42, 0, -12, 12, 0, "mid", slider42, "%.1f dB", 40,40,11));
+        ui_split_next();
+            ui_automate(slider43, labelled_dial(slider43, 0, -12, 12, 0, "treble", slider43, "%.1f dB", 40,40,11));
+        ui_split_next();
+            ui_automate(slider44, labelled_dial(slider44, 0, -12, 12, 0, "high treble", slider44, "%.1f dB", 40,40,11));
+        ui_split_next();
+        ui_split_topratio(1/6);
+                ui_automate(slider46, multipleway_switch_sp(slider46,"1", 0, 20, 12));
+        ui_split_next();
+                ui_automate(slider46, multipleway_switch_sp(slider46,"2", 1, 20, 12));
+        ui_split_next();
+                ui_automate(slider46, multipleway_switch_sp(slider46,"3", 2, 20, 12));
+        ui_split_next();
+        ui_split_next();
+                ui_automate(slider45, multipleway_switch_sp(slider45,"amp", 0, 20, 12));
+                ui_split_next();
+                ui_automate(slider45, multipleway_switch_sp(slider45,"stomp", 1, 20, 12));
+        ui_pop();
+        ui_pop();
+    ui_pop();
+    
+        draw_wavescope();  
+);

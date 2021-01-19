@@ -1,0 +1,93 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+//tags: processing pitch mangler
+//author: Cockos
+
+@init
+
+function mdctslider() (
+slider12=2 ^ (0|(0.5+log10(slider12)/log10(2)))|0; 
+slider12=min(512,max(slider12,32));
+fftsize!=slider12*2 ? (fftsize=slider12*2; bufpos=bi1=0; bi2=fftsize*2; halfsize=fftsize*0.5);
+slider13=min(slider12,max(slider13,-slider12)); 
+);
+
+function mdctsample() (
+// bi2 was the previously transformed buffer, and by the time it
+// is bi2 we only touch the second half (the first was replaced when
+// it was bi1)
+
+// bi1 is the most recently transformed buffer, we only touch the first
+// half, because the second will be used for the next overlap
+
+
+t=bi1+bufpos;
+p0=t[0];
+t[0]=spl0;
+
+t=bi2+halfsize+bufpos;
+p1=t[0];
+t[0]=spl0;
+
+spl0 = p0 + p1; // our mdct handles windowing, so we just add
+
+bufpos+=1;
+
+bufpos >= halfsize ? 
+(
+  // swap bi1 and bi2
+  t=bi1; bi1=bi2; bi2=t;
+  // we hit our FFT size here
+
+  mdct(bi1,fftsize);
+
+  slider13 > 0 ? 
+  (
+       bufpos=bi1+halfsize;
+       loop(halfsize-slider13,
+          bufpos[0]=bufpos[-slider13];
+          bufpos-=1;
+       );
+       loop(slider13,bufpos[0]=0; bufpos-=1;)
+  ) : (
+       bufpos=bi1;
+       loop(halfsize+slider13,
+           bufpos[0]=bufpos[-slider13];
+           bufpos+=1;
+        );
+       loop(-slider13,bufpos[0]=0; bufpos+=1)
+  );
+     
+  imdct(bi1,fftsize);
+  bufpos=0;
+);
+
+spl1=spl0;
+);
+
+function mdctgfx() (
+        ui_split_leftratio(1/2);
+        ui_align(0.2,0.5);
+        ui_text("bands");
+        uix_control_color_from_theme(151, 30);
+        gfx_line(ui_right(),ui_bottom(),ui_right(),ui_top());
+        ui_align(0.7,-1);
+            ui_split_topratio(1/5);
+                ui_automate(slider12, multipleway_switch_sp(slider12, "32", 32, 20, 12));
+            ui_split_next();
+                ui_automate(slider12, multipleway_switch_sp(slider12, "64", 32*2, 20, 12));
+            ui_split_next();
+                ui_automate(slider12, multipleway_switch_sp(slider12, "128", 32*4, 20, 12));
+            ui_split_next();
+                ui_automate(slider12, multipleway_switch_sp(slider12, "256", 32*8, 20, 12));
+            ui_split_next();
+                ui_automate(slider12, multipleway_switch_sp(slider12, "512", 32*16, 20, 12));
+            ui_pop();
+            
+
+        
+        ui_split_next();
+            ui_automate(slider13, labelled_dial(slider13, 0, -512, 512, 0, "band shift", slider13, "%.i", 50,50,12));
+        ui_pop();
+
+);

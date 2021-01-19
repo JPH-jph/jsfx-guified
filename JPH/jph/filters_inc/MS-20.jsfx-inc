@@ -621,20 +621,6 @@
       o3  = out;
     );
 
-function ms20init()(
-bpos=0;
-
-cutoff_mem  = 0;
-reso_mem    = 10000;
-sinc_hist1  = 20000;
-sinc_hist2  = 30000;
-sinc_flt    = 40000;
-sinc_flt2   = 50000;
-sinc_flt3   = 60000;
-sinc_flt4   = 70000;
-sinc_tmp    = 80000;
-);
-
 function ms20slider() (
 preamp      = 10^(slider24/20);
 inv_preamp  = 10^(-slider24/20)*10^(slider25/20);

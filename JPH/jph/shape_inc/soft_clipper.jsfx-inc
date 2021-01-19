@@ -69,18 +69,6 @@
 
 @init
 
-function softinit() (
-  // Buffer for upsampled samples
-  ups = 100000;
-  
-  // Order of up-/downsampling filters. These values should NOT
-  // be updated immediately after the setting changes on the UI,
-  // otherwise the filter parameters may change mid-processing,
-  // which could have nasty side-effects.
-  orderUp = 1;
-  orderDn = 1;
-);
-
   // Decibel to gain factor conversion
   function dBToGain (decibels) (10.0 ^ (decibels / 20.0));
   

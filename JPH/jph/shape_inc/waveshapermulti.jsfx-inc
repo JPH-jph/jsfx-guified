@@ -19,19 +19,6 @@
 
 @init
 
-function multiinit() (
-//fir restoration
-c1 = 1;
-c2 = -0.75;
-c3 = 0.17;
-fgain = 4.1;
-
-//fir bandlimit
-bl_c1 = 0.52;
-bl_c2 = 0.54;
-bl_c3 = -0.02;
-);
-
 function multislider() (
 os = slider28;
 

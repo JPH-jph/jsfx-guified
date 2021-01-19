@@ -26,12 +26,6 @@
 
 @init
 
-function eventhorizoninit()(
-  pi = 3.1415926535;
-  log2db = 8.6858896380650365530225783783321; // 20 / ln(10)
-  db2log = 0.11512925464970228420089957273422; // ln(10) / 20 
-);
-
 function eventhorizonslider()(
   thresh=exp(slider1 * db2log);
   threshdb=slider1;

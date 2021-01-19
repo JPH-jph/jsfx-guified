@@ -87,11 +87,6 @@
       (v0 + m1 * v1 + m2 * v2)
     );
 
-function oddinit() (
-dc0.init_HP6(7/srate);
-dc1.init_HP6(7/srate);
-);
-
 function oddslider() (
 log10d20_conversion = .11512925464970228420089957273422; //log(10)/20;
 preamp      = exp(log10d20_conversion * current_gain2);

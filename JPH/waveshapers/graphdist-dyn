@@ -240,42 +240,8 @@ histpos+=1;
 histpos >= histsize ? histpos=0;
 
 @gfx 800 300
-
-control_start("main", "bitmap-simple", file);
-
-ui_screen() == "main" ? (
-title_desc("Graphical Waveshaper", "processing | distortion | waveshaper");
-
-        control_group("");
-        ui_split_leftratio(1/8);
-            ui_automate(slider5, labelled_dial(slider5, 5, .1, 100, 0, "time", slider5, "%.1f ms", 50,50,14));
-        ui_split_next();
-            ui_automate(slider6, labelled_dial(slider6, -50, -100, 6, 0, "dyn floor", slider6, "%i", 50,50,14));
-        ui_split_next();
-            ui_automate(slider7, labelled_dial(slider7, -6, -60, 60, 0, "dyn pos", slider7, "%i", 50,50,14));
-        ui_split_next();
-        
-            ui_split_topratio(8/9);
-            ui_split_next();
-                ui_automate(slider1, labelled_switch(slider1, "", "mirror"));
-            ui_pop();
-        
-        ui_split_next();
-            ui_split_topratio(8/9);
-            ui_split_next();
-                ui_automate(slider8, labelled_switch(slider8, "", "limit on"));
-            ui_pop();
-        
-        ui_split_next();
-              ui_automate(slider4, labelled_dial(slider4, 1, 1, 32, 0, "oversample", slider4, "%i x", 50,50,14));
-          ui_split_next();
-              ui_automate(slider2, labelled_dial(slider2, 0, -60, 24, 0, "wet", slider2, "%i dB", 50,50,14));
-          ui_split_next();
-              ui_automate(slider3, labelled_dial(slider3, -60, -60, 24, 0, "dry", slider3, "%i dB", 50,50,14));
-        ui_pop();
-
-        
-            sz=gfx_w/5;
+function draw_graph_waveshape() (
+            sz=min(ui_width()*0.8,ui_height()*0.8);
             top = (gfx_h-sz)*0.5;
             left = (gfx_w-sz)*0.5;
             right=gfx_w-left;
@@ -387,6 +353,48 @@ title_desc("Graphical Waveshaper", "processing | distortion | waveshaper");
          );
          gfx_x=gfX_y=0;
          gfx_r=gfx_g=gfx_b=gfx_a=1;
+);
+
+
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Graphical Waveshaper", "processing | distortion | waveshaper");
+
+        control_group("");
+        ui_split_leftratio(1/3);
+            ui_split_leftratio(1/3);
+                ui_automate(slider5, labelled_dial(slider5, 5, .1, 100, 0, "time", slider5, "%.1f ms", 50,50,14));
+            ui_split_next();
+                ui_automate(slider6, labelled_dial(slider6, -50, -100, 6, 0, "dyn floor", slider6, "%i", 50,50,14));
+            ui_split_next();
+                ui_automate(slider7, labelled_dial(slider7, -6, -60, 60, 0, "dyn pos", slider7, "%i", 50,50,14));
+            ui_pop();
+        
+        ui_split_next();
+        
+        draw_graph_waveshape();
+        
+        ui_split_topratio(0.8);
+        ui_split_next();
+        ui_split_leftratio(1/2);
+            ui_automate(slider1, oneway_switch_mid(slider1, "mirror", 20,12));
+        ui_split_next();
+            ui_automate(slider8, oneway_switch_mid(slider8, "limit", 20,12));
+        ui_pop();
+        ui_pop();
+        
+        ui_split_next();
+        
+        ui_split_leftratio(1/3);
+              ui_automate(slider4, labelled_dial(slider4, 1, 1, 32, 0, "oversample", slider4, "%i x", 50,50,14));
+          ui_split_next();
+              ui_automate(slider2, labelled_dial(slider2, 0, -60, 24, 0, "wet", slider2, "%i dB", 50,50,14));
+          ui_split_next();
+              ui_automate(slider3, labelled_dial(slider3, -60, -60, 24, 0, "dry", slider3, "%i dB", 50,50,14));
+        ui_pop();
+
+        
  
 ) : ui_screen() == "opts" ? (
   control_navbar("about", -1, -1);

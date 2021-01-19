@@ -25,23 +25,6 @@
 
 @init
 
-function moog24init() (
-cDenorm = 10^-30;
-mv=2^(-0.2/6);
-fs = srate;
-
-//fir restoration
-c1 = 1;
-c2 = -0.75;
-c3 = 0.17;
-fgain = 5;
-
-//fir bandlimit
-bl_c1 = 0.52;
-bl_c2 = 0.54;
-bl_c3 = -0.02;
-);
-
 function moog24slider() (
 os = slider17;
 mono = slider12;
@@ -53,7 +36,7 @@ drvc = 1.2;
 sx = 16+slider14*1.20103;
 cutoff = floor(exp(sx*log(1.059))*8.17742);
 
-f = 2 * cutoff / fs;
+f = 2 * cutoff / moog_fs;
 tgt_k = 3.6*f-1.6*f*f-1;
 tgt_p = (tgt_k+1)*0.5;
 scale = 2.718281828459045^((1-tgt_p)*1.386249);
@@ -116,10 +99,10 @@ bl1_r1 = o_in1r;
 bl1_l2 = o_in2l;
 bl1_r2 = o_in2r;
 
-bl_out1l = (bl1_l1*bl_c1 + bl2_l1*bl_c2 + bl3_l1*bl_c3);
-bl_out1r = (bl1_r1*bl_c1 + bl2_r1*bl_c2 + bl3_r1*bl_c3);
-bl_out2l = (bl1_l2*bl_c1 + bl2_l2*bl_c2 + bl3_l2*bl_c3);
-bl_out2r = (bl1_r2*bl_c1 + bl2_r2*bl_c2 + bl3_r2*bl_c3);
+bl_out1l = (bl1_l1*bl_moog_c1 + bl2_l1*bl_moog_c2 + bl3_l1*bl_moog_c3);
+bl_out1r = (bl1_r1*bl_moog_c1 + bl2_r1*bl_moog_c2 + bl3_r1*bl_moog_c3);
+bl_out2l = (bl1_l2*bl_moog_c1 + bl2_l2*bl_moog_c2 + bl3_l2*bl_moog_c3);
+bl_out2r = (bl1_r2*bl_moog_c1 + bl2_r2*bl_moog_c2 + bl3_r2*bl_moog_c3);
 
 //power series out
 o_out1l = 0.5*(bl_out1l+o_out2l);
@@ -135,8 +118,8 @@ s2r = s1r;
 s1l = o_out1l;
 s1r = o_out1r;
 
-inputl = (s1l*c1+s2l*c2+s3l*c3)*fgain;
-inputr = (s1r*c1+s2r*c2+s3r*c3)*fgain;
+inputl = (s1l*moog_c1+s2l*moog_c2+s3l*moog_c3)*moog_fgain;
+inputr = (s1r*moog_c1+s2r*moog_c2+s3r*moog_c3)*moog_fgain;
 
 ) : (
 inputl = inl*(abs(inl) + drive)/(inl^2 + (drive-1)*abs(inl) + 1)*(drive/drvc);
@@ -215,8 +198,8 @@ bl2_2 = bl1_2;
 bl1_1 = o_in1l;
 bl1_2 = o_in12;
 
-bl_out1 = (bl1_1*bl_c1 + bl2_1*bl_c2 + bl3_1*bl_c3);
-bl_out2 = (bl1_2*bl_c1 + bl2_2*bl_c2 + bl3_2*bl_c3);
+bl_out1 = (bl1_1*bl_moog_c1 + bl2_1*bl_moog_c2 + bl3_1*bl_moog_c3);
+bl_out2 = (bl1_2*bl_moog_c1 + bl2_2*bl_moog_c2 + bl3_2*bl_moog_c3);
 
 //power series out
 o_out1l = 0.5*(bl_out1+o_out2l);
@@ -227,7 +210,7 @@ s3l = s2l;
 s2l = s1l;
 s1l = o_out1l;
 
-input = (s1l*c1+s2l*c2+s3l*c3)*fgain;
+input = (s1l*moog_c1+s2l*moog_c2+s3l*moog_c3)*moog_fgain;
 
 ) : (
 

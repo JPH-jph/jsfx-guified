@@ -1,0 +1,201 @@
+//witti
+
+@init
+
+function hallinit() (
+tmp1 = tmp2 = 0;
+
+g1 = g2 = g3 = g4 = 0.62;
+g5 = 0.62;
+g7 = 0.62;
+g9 = 0.62;
+g11 = 0.62;
+);
+
+function hallslider() (
+dry = -30 <= -30.0 ? 0.0 : 10^(-30/20);
+wet = 0 <= -30.0 ? 0.0 : 10^(0/20)*0.5;
+d = exp( -2*$pi*slider6/srate );
+
+primenumber=(slider8-1)^2+slider8+40;
+primenumber2= primenumber+(slider9-1)^2+slider9+40;
+primenumber3= primenumber2+(slider10-1)^2+slider10+40;
+primenumber4= primenumber3+(slider11-1)^2+slider11+40;
+primenumber5= primenumber4+(slider12-1)^2+slider12+40;
+primenumber6= primenumber5+(slider13-1)^2+slider13+40;
+primenumber7= primenumber6+(slider14-1)^2+slider14+40;
+primenumber8= primenumber7+(slider15-1)^2+slider15+40;
+primenumber9= primenumber8+(slider16-1)^2+slider16+40;
+primenumber10= primenumber9+(slider17-1)^2+slider17+40;
+primenumber11= primenumber10+(slider18-1)^2+slider18+40;
+primenumber12= primenumber11+(slider19-1)^2+slider19+40;
+
+l0 = slider5/1000*srate + 1|0; // added "|0"
+l1 = primenumber;
+l2 = primenumber2;
+l3 = primenumber3;
+l4 = primenumber4;
+l5 = primenumber5;
+l6 = primenumber6;
+l7 = primenumber7;
+l8 = primenumber8;
+l9 = primenumber9;
+l10 = primenumber10;
+l11 = primenumber11;
+l12 = primenumber12;
+
+f = exp( log(0.001) / (slider4*srate / (l5+l6+l7+l8)) );
+
+Rl0 = slider5/1000*srate + 1|0; // added "|0"
+Rl1 = l1;
+Rl2 = l2-37;
+Rl3 = l3+37;
+Rl4 = l4-37;
+Rl5 = l5+37;
+Rl6 = l6-37;
+Rl7 = l7+37;
+Rl8 = l8-37;
+Rl9 = l9+37;
+Rl10 = l10-37;
+Rl11 = l11+37;
+Rl12 = l12-37;
+
+b0 = 0;
+b1 = b0+l0;
+b2 = b1+l1;
+b3 = b2+l2;
+b4 = b3+l3;
+b5 = b4+l4;
+b6 = b5+l5;
+b7 = b6+l6;
+b8 = b7+l7;
+b9 = b8+l8;
+b10 = b9+l9;
+b11 = b10+l10;
+b12 = b11+l11;
+
+Rb0 = b12+l12;
+Rb1 = Rb0+Rl0;
+Rb2 = Rb1+Rl1;
+Rb3 = Rb2+Rl2;
+Rb4 = Rb3+Rl3;
+Rb5 = Rb4+Rl4;
+Rb6 = Rb5+Rl5;
+Rb7 = Rb6+Rl6;
+Rb8 = Rb7+Rl7;
+Rb9 = Rb8+Rl8;
+Rb10 = Rb9+Rl9;
+Rb11 = Rb10+Rl10;
+Rb12 = Rb11+Rl11;
+);
+
+function hallsample() (
+input = spl0;
+Rinput = spl1;
+
+/* LEFT CHANNEL */
+in = spl0;
+in0=in;out0=b0[p0];b0[p0]=in0;p0=(p0+1)%l0;
+in1=out0;out1=b1[p1]-g1*in1;b1[p1]=in1+g1*out1;p1=(p1+1)%l1;
+in2=out1;out2=b2[p2]-g2*in2;b2[p2]=in2+g2*out2;p2=(p2+1)%l2;
+in3=out2;out3=b3[p3]-g3*in3;b3[p3]=in3+g3*out3;p3=(p3+1)%l3;
+in4=out3;out4=b4[p4]-g4*in4;b4[p4]=in4+g4*out4;p4=(p4+1)%l4;
+
+tmp1 = out4 + out12 * f;
+tmp2 = out4 + out8 * f;
+
+tmp1 = t1 = tmp1 + d * (t1-tmp1);
+tmp2 = t2 = tmp2 + d * (t2-tmp2);
+
+in5=tmp1;out5=b5[p5]-g5*in5;b5[p5]=in5+g5*out5;p5=(p5+1)%l5;
+in6=out5;out6=b6[p6];b6[p6]=in6;p6=(p6+1)%l6;
+in7=out6;out7=b7[p7]-g7*in7;b7[p7]=in7+g7*out7;p7=(p7+1)%l7;
+in8=out7;out8=b8[p8];b8[p8]=in8;p8=(p8+1)%l8;
+
+in9 =tmp2;out9=b9[p9]-g9*in9;b9[p9]=in9+g9*out9;p9=(p9+1)%l9;
+in10=out9;out10=b10[p10];b10[p10]=in10;p10=(p10+1)%l10;
+in11=out10;out11=b11[p11]-g11*in11;b11[p11]=in11+g11*out11;p11=(p11+1)%l11;
+in12=out11;out12=b12[p12];b12[p12]=in12;p12=(p12+1)%l12;
+
+out = out5 + out7 + out9 + out11;
+
+/* RIGHT CHANNEL */
+Rin = spl1;
+Rin0=Rin;Rout0=Rb0[Rp0];Rb0[Rp0]=Rin0;Rp0=(Rp0+1)%Rl0;
+Rin1=Rout0;Rout1=Rb1[Rp1]-g1*Rin1;Rb1[Rp1]=Rin1+g1*Rout1;Rp1=(Rp1+1)%Rl1;
+Rin2=Rout1;Rout2=Rb2[Rp2]-g2*Rin2;Rb2[Rp2]=Rin2+g2*Rout2;Rp2=(Rp2+1)%Rl2;
+Rin3=Rout2;Rout3=Rb3[Rp3]-g3*Rin3;Rb3[Rp3]=Rin3+g3*Rout3;Rp3=(Rp3+1)%Rl3;
+Rin4=Rout3;Rout4=Rb4[Rp4]-g4*Rin4;Rb4[Rp4]=Rin4+g4*Rout4;Rp4=(Rp4+1)%Rl4;
+
+Rtmp1 = Rout4 + Rout12 * f;
+Rtmp2 = Rout4 + Rout8 * f;
+
+Rtmp1 = Rt1 = Rtmp1 + d * (Rt1-Rtmp1);
+Rtmp2 = Rt2 = Rtmp2 + d * (Rt2-Rtmp2);
+
+Rin5=Rtmp1;Rout5=Rb5[Rp5]-g5*Rin5;Rb5[Rp5]=Rin5+g5*Rout5;Rp5=(Rp5+1)%Rl5;
+Rin6=Rout5;Rout6=Rb6[Rp6];Rb6[Rp6]=Rin6;Rp6=(Rp6+1)%Rl6;
+Rin7=Rout6;Rout7=Rb7[Rp7]-g7*Rin7;Rb7[Rp7]=Rin7+g7*Rout7;Rp7=(Rp7+1)%Rl7;
+Rin8=Rout7;Rout8=Rb8[Rp8];Rb8[Rp8]=Rin8;Rp8=(Rp8+1)%Rl8;
+
+Rin9=Rtmp2;Rout9=Rb9[Rp9]-g9*Rin9;Rb9[Rp9]=Rin9+g9*Rout9;Rp9=(Rp9+1)%Rl9;
+Rin10=Rout9;Rout10=Rb10[Rp10];Rb10[Rp10]=Rin10;Rp10=(Rp10+1)%Rl10;
+Rin11=Rout10;Rout11=Rb11[Rp11]-g11*Rin11;Rb11[Rp11]=Rin11+g11*Rout11;Rp11=(Rp11+1)%Rl11;
+Rin12=Rout11;Rout12=Rb12[Rp12];Rb12[Rp12]=Rin12;Rp12=(Rp12+1)%Rl12;
+
+Rout = Rout5 + Rout7 + Rout9 + Rout11;
+
+// OUTPUT
+slider7 ? (
+spl0 = input*dry + out*wet;
+spl1 = Rinput*dry + Rout*wet;
+):(
+spl0 = ((input+Rinput)*0.5)*dry + ((out+Rout)*0.5)*wet;
+spl1 = spl0;
+);
+);
+
+function hallgfx() (
+    ui_split_leftratio(0.6);
+        ui_split_topratio(1/2);
+        control_group("");
+            ui_split_leftratio(1/4);
+                ui_automate(slider4, labelled_dial(slider4, 1, 0, 10, 0, "length", slider4, "%.1f s", 50,50,12));
+            ui_split_next();
+                ui_automate(slider5, labelled_dial(slider5, 0, 0, 100, 0, "predelay", slider5, "%.1f ms", 50,50,12));
+            ui_split_next();
+                ui_automate(slider6, labelled_dial(slider6, 2000, 1000, 8000, 0, "damp", slider6, "%.i Hz", 50,50,12));
+            ui_split_next();
+                ui_automate(slider7, oneway_switch_mid(slider7, "stereo", 20, 12));
+            ui_pop();
+        ui_pop();
+        control_group("primes");
+            ui_split_leftratio(1/12);
+                ui_automate(slider8, labelled_slider_jph(slider8, 20, 1, 25, 0, "", slider8, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider9, labelled_slider_jph(slider9, 18, 1, 25, 0, "", slider9, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider10, labelled_slider_jph(slider10, 16, 1, 25, 0, "", slider10, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider11, labelled_slider_jph(slider11, 14, 1, 25, 0, "", slider11, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider12, labelled_slider_jph(slider12, 12, 1, 25, 0, "", slider12, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider13, labelled_slider_jph(slider13, 10, 1, 25, 0, "", slider13, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider14, labelled_slider_jph(slider14, 8, 1, 25, 0, "", slider14, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider15, labelled_slider_jph(slider15, 6, 1, 25, 0, "", slider15, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider16, labelled_slider_jph(slider16, 7, 1, 25, 0, "", slider16, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider17, labelled_slider_jph(slider17, 9, 1, 25, 0, "", slider17, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider18, labelled_slider_jph(slider18, 5, 1, 25, 0, "", slider18, "%.i", 200,15,10,10));
+            ui_split_next();
+                ui_automate(slider19, labelled_slider_jph(slider19, 3, 1, 25, 0, "", slider19, "%.i", 200,15,10,10));
+            ui_pop();
+    ui_pop();
+    
+        draw_verbs(slider4*0.075,slider5*0.1*0.075,0.45,0); //0.75,0.75,0.45,0.45
+);

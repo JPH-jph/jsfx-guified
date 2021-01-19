@@ -25,32 +25,23 @@
 
 @init
 
-function cheby24init() (
-//cDenorm = 10^-30;
-cDenorm = 0;
-mv=2^(-0.2/6);
-e = 2.718281828459045;
-pi = 3.141592653589793;
-cutoff = 20000;
-);
-
 function cheby24slider() (
 mono = slider8;
 fs = srate;
 
 sx = 16+slider10*1.20103;
-cutoff = floor(exp(sx*log(1.059))*8.17742);
+cheby_cutoff = floor(exp(sx*log(1.059))*8.17742);
 
-cutoff < 90 ? (
+cheby_cutoff < 90 ? (
 pbr = 0.5;
 ) : (
 pbr = 1.03-0.1-slider11;
 );
 
-K = tan(pi*cutoff/srate);
+K = tan(pi*cheby_cutoff/srate);
 
-sg = (e^pbr-e^(-pbr))/2;
-cg = (e^pbr+e^(-pbr))/2;
+sg = (cheby_e^pbr-cheby_e^(-pbr))/2;
+cg = (cheby_e^pbr+cheby_e^(-pbr))/2;
 cg *= cg;
 
 Coeff0 = 1/(cg-0.85355339059327376220042218105097);
@@ -204,7 +195,7 @@ function cheby24gfx() (
                 
             ui_split_next();
                 ui_split_leftratio(1/2);
-                    ui_automate(slider10, labelled_dial(slider10, 0, 0, 100, 0, "cutoff", floor(exp((16+slider10*1.20103)*log(1.059))*8.17742), "%i Hz", 60,60,12)); 
+                    ui_automate(slider10, labelled_dial(slider10, 0, 0, 100, 0, "cheby_cutoff", floor(exp((16+slider10*1.20103)*log(1.059))*8.17742), "%i Hz", 60,60,12)); 
                 ui_split_next("");
                     ui_automate(slider11, labelled_dial(slider11, 0, 0, 0.9, 0, "reso", slider11, "%.1f", 50,50,12));
                 ui_pop();
@@ -221,7 +212,7 @@ function cheby24gfx() (
                 
             ui_split_next();
                 ui_split_leftratio(1/2);
-                    ui_automate(slider10, labelled_dial(slider10, 0, 0, 100, 0, "cutoff", floor(exp((16+slider10*1.20103)*log(1.059))*8.17742), "%i Hz", 60,60,12)); 
+                    ui_automate(slider10, labelled_dial(slider10, 0, 0, 100, 0, "cheby_cutoff", floor(exp((16+slider10*1.20103)*log(1.059))*8.17742), "%i Hz", 60,60,12)); 
                 ui_split_next("");
                     ui_automate(slider11, labelled_dial(slider11, 0, 0, 0.9, 0, "reso", slider11, "%.1f", 50,50,12));
                 ui_pop();
@@ -236,7 +227,7 @@ function cheby24gfx() (
             
             ui_split_next();
                 ui_split_leftratio(1/2);
-                    ui_automate(slider10, labelled_dial(slider10, 0, 0, 100, 0, "cutoff", floor(exp((16+slider10*1.20103)*log(1.059))*8.17742), "%i Hz", 60,60,12)); 
+                    ui_automate(slider10, labelled_dial(slider10, 0, 0, 100, 0, "cheby_cutoff", floor(exp((16+slider10*1.20103)*log(1.059))*8.17742), "%i Hz", 60,60,12)); 
                 ui_split_next("");
                     ui_automate(slider11, labelled_dial(slider11, 0, 0, 0.9, 0, "reso", slider11, "%.1f", 50,50,12));
                 ui_pop();

@@ -19,16 +19,6 @@ function gain(x) ( x <= -120 ? 0 : exp(/* log(10)/20 */ 0.11512925464970228 * x)
 smooth.rc_set(0.0033);
 function smooth() ( smooth.lp = this.smooth; this.smooth = smooth.rc_lp(this); );
 
-function zdfinit() (
-r2.smooth = cl.smooth = 1;
-cb.smooth = ch.smooth = 0;
-
-dry.smooth = 0;
-wet.smooth = 1;
-
-min_fc = 1/60;
-);
-
 function zdfslider() (
 mode = min(max(0, slider38|0), 7);
 freq = max(24000 * scale(slider40 * 0.01), min_fc);

@@ -1,0 +1,263 @@
+desc: Spaces - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+import /space_inc/mda_ambience.jsfx-inc
+import /space_inc/reverb_hall_3.jsfx-inc
+import /space_inc/cooka.jsfx-inc
+import /spaceb_inc/small.jsfx-inc
+import /space_inc/large.jsfx-inc
+import /space_inc/jcjr_CosmoDepot.jsfx-inc
+import /space_inc/fx_cubeverb.jsfx-inc
+import /space_inc/HadamVerb.jsfx-inc
+
+slider1:0.5<0,1,0.01>-size    ---ambience---
+slider2:0.5<0,1,0.01>-feedback
+slider3:0.5<0,1,0.01>-hf damp
+
+slider4:1<0,10,0.001>-Length (s)    ---hall---
+slider5:0<0,100,1>-Pre-Delay (ms)
+slider6:2000<1000,8000,1>-Highdamp (Hz)
+slider7:1<0,1,1{mono,stereo}>-Mode
+slider8:20<1,25,1>-xth Prime
+slider9:18<1,25,1>-+y 0
+slider10:16<1,25,1>-+y 1
+slider11:14<1,25,1>-+y 2
+slider12:12<1,25,1>-+y 3
+slider13:10<1,25,1>-+y 4
+slider14:8<1,25,1>-+y 5
+slider15:6<1,25,1>-+y 6
+slider16:7<1,25,1>-+y 7
+slider17:9<1,25,1>-+y 8
+slider18:5<1,25,1>-+y 9
+slider19:3<1,25,1>-+y 10
+
+slider20:0.75<0,1>-Feedback    ---cook---
+slider21:5000<200,10000>-Cutoff
+slider22:0.25<0,1>-Balance
+
+slider23:0<-120,0,1>-Dry    ---small/large---
+slider24:-6<-120,0,1>-Wet
+slider25:50<0,100,1>-Damping (%)
+
+slider26:60<0.1,200,0.1>-Pre-Delay [ms]    ---jxjr---
+slider27:250<0.1,1000,0.1>-Delay Loop Len [ms]
+slider28:90<0,100,0.1>-Rvb Taps Feedback [Percent]
+slider29:7.5<0,20,0.1>-Rvb Taps Mod [Cents]
+slider30:0<0,100,0.1>-Output Taps Feedback [Percent]
+slider31:2<0,20,0.1>-Output Taps Mod [Cents]
+slider32:100<40,400,1>-Low Freq Damp [Hz]
+slider33:5000<1000,10000,1>-Hi Freq Damp [Hz]
+slider34:20<0,100,0.1>-AutoPan Mod [Percent]
+slider35:0<0,14,1{[X][X][X][X],[X][X][X][_],[X][X][_][X],[X][_][X][X],[X][X][_][_],[X][_][X][_],[X][_][_][X],[X][_][_][_],[_][X][X][X],[_][X][X][_],[_][X][_][X],[_][X][_][_],[_][_][X][X],[_][_][X][_],[_][_][_][X]}>-Output Taps Selection
+
+slider36:.05<0,1,0.001>-Reverb Material Low-Cut    ---cube---
+slider37:.25<0,1,0.01>-Reverb Material Resonance
+slider38:50<0,1000,1>-Reverb Delay (ms) 
+slider39:0<-99,0,0.5>-Reverb Decay (dB)
+slider40:0<0,180,5>-Phase (Degrees)
+
+slider41:0.2<0.01,1>-Base Delay (s)    ---had---
+slider42:2<0,5>-Fb 1
+slider43:2<0,5>-Fb 2
+slider44:30<0,60>-VLFO cycle A
+slider45:20<0,60>-B
+slider46:10<1,20>-Factor between arrays
+slider47:0.01<0,0.5>-Modulation depth
+
+//switchers
+slider62:0<-12,12,.1>-Output
+slider63:0<0,6,1>-Theme
+slider64:0<0,9,1>-Switch
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+freemem = 1600000;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+function slider_update()
+(
+needs_slider_update=0;
+
+outgaina = 10^(slider62/20);
+
+slider64 == 0 ? (
+ambienceinit();
+ambienceslider();
+) : slider64 == 1 ? (
+hallinit();
+hallslider();
+) : slider64 == 2 ? ( 
+cookslider();
+) : slider64 == 3 ? ( 
+largeinit();
+smallslider();
+) : slider64 == 4 ? ( 
+largeinit();
+largeslider();
+) : slider64 == 5 ? ( 
+jcjrinit();
+jcjrinit2();
+jcjrslider();
+) : slider64 == 6 ? ( 
+cubeinit();
+cubeslider();
+) : slider64 == 7 ? ( 
+hadslider();
+);
+
+slider63 < 1 ? (
+    file=0;
+) : slider63 < 2 ? (
+    file=1;
+) : slider63 < 3 ? (
+    file=2;
+) : slider63 < 5 ? (
+    file=3;
+) : slider63 < 6 ? (
+    file=4;
+) : slider63 < 7 ? (
+    file=5;
+);
+
+);
+
+@slider
+needs_slider_update=1;
+
+@block
+
+needs_slider_update ? slider_update();
+
+@sample
+slider64 == 0 ? (
+ambiencesample();
+) : slider64 == 1 ? (
+hallsample();
+) : slider64 == 2 ? (
+cooksample();
+) : slider64 == 3 ? (
+smallsample();
+) : slider64 == 4 ? (
+largesample();
+) : slider64 == 5 ? (
+jcjrsample();
+) : slider64 == 6 ? (
+cubesample();
+) : slider64 == 7 ? (
+hadsample();
+);
+
+spl0*=outgaina;
+spl1*=outgaina;
+
+@gfx 800 450
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Spaces", "fx | reverb | hall | ambience");
+
+        ui_split_leftratio(.15);
+            control_group("");
+            ui_split_topratio(1/8);
+                ui_automate(slider64, multipleway_switch(slider64, "ambience", 0, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "hall", 1, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "cook", 2, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "small", 3, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "large", 4, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "jcjr", 5, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "cube", 6, 20, 12));
+            ui_split_next();
+                ui_automate(slider64, multipleway_switch(slider64, "had", 7, 20, 12));
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.85);
+        control_group("");
+                
+        slider64 == 0 ? (
+            ambiencegfx();
+        ) : slider64 == 1 ? (
+            hallgfx();
+        ) : slider64 == 2 ? (
+            cookgfx();
+        ) : slider64 == 3 ? (
+            smallgfx();
+        ) : slider64 == 4 ? (
+            largegfx();
+        ) : slider64 == 5 ? (
+            jcjrgfx();
+        ) : slider64 == 6 ? (
+            cubegfx();
+        ) : slider64 == 7 ? (
+            hadgfx();
+        );
+        
+        ui_pop();
+        
+
+                //out
+                control_group("");
+                    ui_automate(slider62, labelled_dial(slider62, 0, -24, 24, 0, "out", slider62, "%i dB", 50,50,14));
+                ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 15, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX reverbs (and other time based stuff):
+    -ambience = mda_ambience by witti
+    -hall = reverb_hall_3 by witti
+    -cook = simple reverb using cookdsp
+    -small = Small Room Reverberator by loser
+    -large = Large Room Reverberator by loser
+    -jcjr = CosmoDepot by jcjr
+    -cube = cubeverb by ccernn
+    -had = hadamverb by tiar
+
+editor: JPH
+-GUI (using Geraint Luff's API)
+  -> still needs a bit of work
+  -> will rewrite at some point
+  
+-Red dials indicate that they work a bit differently from others:
+      -left mouse button = increase value
+      -right mouse button = decrease value
+      -middle mouse button = set to default");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider63 = labelled_dial(slider63, 0, 0, 6, 0, "theme", slider63, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;
+

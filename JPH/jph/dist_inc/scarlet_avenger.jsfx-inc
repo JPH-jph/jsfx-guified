@@ -1,0 +1,99 @@
+// desc:Dual-Stage Drive Guitar Pre-Amp v0.4
+
+@init
+
+function saslider() (
+pregate=2 ^ (slider32/6);
+preGain=2 ^ (slider33/6);
+selectedDist = min(slider34/100,.999);
+distGain = 2*selectedDist/(1-selectedDist);
+midCut=2 ^ (slider35/6);
+mstrOut=2 ^ (0/6);
+outToneAdj=2 ^ (slider36/6);
+
+freqHP = min(sa_splitHigh,srate);
+xHP = exp(-2.0*$pi*freqHP/srate);
+a0HP = 1.0-xHP;
+b1HP = -xHP;
+
+freqLP = min(min(sa_splitLow,srate),sa_splitHigh);
+xLP = exp(-2.0*$pi*freqLP/srate);
+a0LP = 1.0-xLP;
+b1LP = -xLP;
+
+sillen=50*srate/1000;
+fadeout = 1/pow(10,1/(srate*sa_gateFadeOut/1000));
+fadein  = 1/pow(10,1/(srate*sa_gateFadeIn/1000));
+);
+
+function sasample() (
+a=abs(spl0) > preGate;
+
+a ? 
+(
+   sa_silentcnt=0; 
+   sa_seekto=1;
+) : (
+   (sa_silentcnt+=1) > sillen ?  sa_seekto=0;
+);
+
+sa_seekto > 0.5 ? 
+( // fading in
+  sa_seekv=sa_seekv*fadein + (1-fadein);
+)
+:
+( // fading out
+  sa_seekv=sa_seekv*fadeout;
+);
+
+spl0=spl0*sa_seekv;
+spl0 = min(max(spl0,-1),1);
+
+s0 = spl0;
+
+lowSpl = (tmplLP = a0LP*s0 - b1LP*tmplLP + sa_cDenorm);
+highSpl = s0 - (tmplHP = a0HP*s0 - b1HP*tmplHP + sa_cDenorm);
+midSpl = s0 - lowSpl - highSpl;
+
+distLower=distGain*(1-(abs(spl0)));
+lowSpl=lowSpl*(1-abs(spl0));
+midSpl=midSpl*preGain;
+
+midSpl > 0 ? (midSpl = (1+distGain)*midSpl/(1+distGain*midSpl));
+midSpl=midSpl*midCut;
+midSpl > 0 ? (midSpl = (1+distGain)*midSpl/(1+distGain*midSpl));
+
+lowSpl=lowSpl*midCut*(1-abs(spl0))*midCut;
+
+lowSpl > 0 ? (lowSpl = (1+distLower)*lowSpl/(1+distLower*lowSpl));
+lowSpl=lowSpl*midCut*(1-abs(spl0));
+lowSpl > 0 ? (lowSpl = (1+distLower)*lowSpl/(1+distLower*lowSpl));
+
+lowSpl=lowSpl*outToneAdj;
+highSpl=highSpl*outToneAdj;
+
+spl0=(midSpl+lowSpl+highSpl)*mstrOut;
+
+spl1=spl0;
+);
+
+function sagfx() (
+    ui_split_leftratio(0.6);
+        ui_split_topratio(1/2);
+            ui_split_leftratio(1/3);
+                ui_automate(slider32, labelled_dial(slider32, -80, -120, 0, 0, "in gate", slider32, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(slider33, labelled_dial(slider33, 5, -9, 18, 0, "in gain", slider33, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(slider34, labelled_dial(slider34, 0, 0, 100, 0, "drive", slider34, "%.1f %%", 50,50,12));
+            ui_pop();
+        ui_pop();
+        ui_split_leftratio(1/2);
+            ui_automate(slider35, labelled_dial(slider35, -2.5, -36, 0, 0, "mid cutback", slider35, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider36, labelled_dial(slider36, -6, -120, 0, 0, "tone adjust", slider36, "%.1f dB", 50,50,12));
+        ui_pop();
+    ui_pop();
+    
+        draw_wavescope();  
+);
