@@ -87,9 +87,15 @@ out_pin:right output
 
 @init
 ///////////////////////
-freemem = 1600000;
+bufferlength = ceil(srate*1);
+buffer0 = 2600000;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
 freemem = ui_setup(freemem); // returns the first index it's not using
 ///////////////////////
+
+didwegothere = wheredowego;
 
 function slider_update()
 (
@@ -97,30 +103,14 @@ needs_slider_update=0;
 
 outgaina = 10^(slider62/20);
 
-slider64 == 0 ? (
-ambienceinit();
-ambienceslider();
-) : slider64 == 1 ? (
-hallinit();
-hallslider();
-) : slider64 == 2 ? ( 
-cookslider();
-) : slider64 == 3 ? ( 
-largeinit();
-smallslider();
-) : slider64 == 4 ? ( 
-largeinit();
-largeslider();
-) : slider64 == 5 ? ( 
-jcjrinit();
-jcjrinit2();
-jcjrslider();
-) : slider64 == 6 ? ( 
-cubeinit();
-cubeslider();
-) : slider64 == 7 ? ( 
-hadslider();
-);
+wheredowego == 1 ? (ambienceslider());
+wheredowego == 2 ? (hallslider());
+wheredowego == 3 ? (cookslider());
+wheredowego == 4 ? (smallslider());
+wheredowego == 5 ? (largeslider());
+wheredowego == 6 ? (jcjrslider());
+wheredowego == 7 ? (cubeslider());
+wheredowego == 8 ? (hadslider());
 
 slider63 < 1 ? (
     file=0;
@@ -142,27 +132,48 @@ slider63 < 1 ? (
 needs_slider_update=1;
 
 @block
+didwegothere == 1 ? (
+ambienceinit();
+didwegothere = 0;
+);
+
+didwegothere == 2 ? (
+hallinit();
+didwegothere = 0;
+);
+
+didwegothere == 4 || didwegothere == 5 ? (
+largeinit();
+didwegothere = 0;
+);
+
+didwegothere == 6 ? (
+jcjrinit();
+jcjrinit2();
+didwegothere = 0;
+);
+
+didwegothere == 7 ? (
+cubeinit();
+didwegothere = 0;
+);
+
+didwegothere == 8 ? (
+hadaminit();
+didwegothere = 0;
+);
 
 needs_slider_update ? slider_update();
 
 @sample
-slider64 == 0 ? (
-ambiencesample();
-) : slider64 == 1 ? (
-hallsample();
-) : slider64 == 2 ? (
-cooksample();
-) : slider64 == 3 ? (
-smallsample();
-) : slider64 == 4 ? (
-largesample();
-) : slider64 == 5 ? (
-jcjrsample();
-) : slider64 == 6 ? (
-cubesample();
-) : slider64 == 7 ? (
-hadsample();
-);
+wheredowego == 1 ? (ambiencesample());
+wheredowego == 2 ? (hallsample());
+wheredowego == 3 ? (cooksample());
+wheredowego == 4 ? (smallsample());
+wheredowego == 5 ? (largesample());
+wheredowego == 6 ? (jcjrsample());
+wheredowego == 8 ? (hadsample());
+wheredowego == 7 ? (cubesample());
 
 spl0*=outgaina;
 spl1*=outgaina;
@@ -176,45 +187,44 @@ title_desc("Spaces", "fx | reverb | hall | ambience");
         ui_split_leftratio(.15);
             control_group("");
             ui_split_topratio(1/8);
-                ui_automate(slider64, multipleway_switch(slider64, "ambience", 0, 20, 12));
+                control_button("ambience") ? (
+                wheredowego = didwegothere = 1);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "hall", 1, 20, 12));
+                control_button("hall") ? (
+                wheredowego = didwegothere = 2);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "cook", 2, 20, 12));
+                control_button("cook") ? (
+                wheredowego = didwegothere = 3);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "small", 3, 20, 12));
+                control_button("small") ? (
+                wheredowego = didwegothere = 4);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "large", 4, 20, 12));
+                control_button("large") ? (
+                wheredowego = didwegothere = 5);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "jcjr", 5, 20, 12));
+                control_button("jcjr") ? (
+                wheredowego = didwegothere = 6);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "cube", 6, 20, 12));
+                control_button("cube") ? (
+                wheredowego = didwegothere = 7);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "had", 7, 20, 12));
+                control_button("had") ? (
+                wheredowego = didwegothere = 8);
             ui_pop();
         ui_pop();
         
         control_group("");
         ui_split_leftratio(0.85);
         control_group("");
-                
-        slider64 == 0 ? (
-            ambiencegfx();
-        ) : slider64 == 1 ? (
-            hallgfx();
-        ) : slider64 == 2 ? (
-            cookgfx();
-        ) : slider64 == 3 ? (
-            smallgfx();
-        ) : slider64 == 4 ? (
-            largegfx();
-        ) : slider64 == 5 ? (
-            jcjrgfx();
-        ) : slider64 == 6 ? (
-            cubegfx();
-        ) : slider64 == 7 ? (
-            hadgfx();
-        );
+        
+        wheredowego == 1 ? (ambiencegfx());
+        wheredowego == 2 ? (hallgfx());
+        wheredowego == 3 ? (cookgfx());
+        wheredowego == 4 ? (smallgfx());
+        wheredowego == 5 ? (largegfx());
+        wheredowego == 6 ? (jcjrgfx());
+        wheredowego == 7 ? (cubegfx());
+        wheredowego == 8 ? (hadgfx());
         
         ui_pop();
         
@@ -261,3 +271,5 @@ ui_pop();
 
 ui_interacted() ? needs_slider_update = 1;
 
+@serialize
+file_var(0, wheredowego);

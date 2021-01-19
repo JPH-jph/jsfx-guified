@@ -85,9 +85,11 @@ ldf3 += 0.0001 * (ld3 - ldf3);
 );
 
 
+function hadaminit() (
 HAD();
 h1.HAD_init();
 h2.HAD_init();
+);
 
 // _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 function VLFO_proc()

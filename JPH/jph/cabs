@@ -94,31 +94,17 @@ freemem = bufferpeak + bufferlength;
 freemem = ui_setup(freemem); // returns the first index it's not using
 ///////////////////////
 
+didwegothere = wheredowego;
+
 function slider_update()
 (
 needs_slider_update=0;
 outgaina = 10^(slider62/20);
 
-slider64 == 0 ? (
-uniinit();
-) : slider64 == 1 ? (
-dualinit();
-) : slider64 == 2 ? (
-wittiinit();
-) : slider64 == 3 ? (
-cabinit();
-);
-
-slider64 == 0 ? ( 
-unislider();
-) : slider64 == 1 ? (
-dualslider();
-) : slider64 == 2 ? (
-wittislider();
-) : slider64 == 3 ? (
-cabslider();
-);
-
+wheredowego == 1 ? (unislider());
+wheredowego == 2 ? (dualslider());
+wheredowego == 3 ? (wittislider());
+wheredowego == 4 ? (cabslider());
 
 slider63 < 1 ? (
     file=0;
@@ -140,23 +126,40 @@ slider63 < 1 ? (
 needs_slider_update=1;
 
 @block
-needs_slider_update ? slider_update();
-slider64 == 0 ? ( 
-uniblock();
-) : slider64 == 1 ? (
-dualblock();
+wheredowego == 1 ? (
+    uniblock();
+        didwegothere == 1 ? (
+        uniinit();
+        didwegothere = 0;
+        );
+);
+wheredowego == 2 ? (
+    dualblock();
+        didwegothere == 2 ? (
+        dualinit();
+        didwegothere = 0;
+        );
+);
+wheredowego == 3 ? (
+        didwegothere == 3 ? (
+        wittiinit();
+        didwegothere = 0;
+        );
+);
+wheredowego == 4 ? (
+        didwegothere == 4 ? (
+        cabinit();
+        didwegothere = 0;
+        );
 );
 
+needs_slider_update ? slider_update();
+
 @sample
-slider64 == 0 ? (
-unisample();
-) : slider64 == 1 ? (
-dualsample();
-) : slider64 == 2 ? (
-wittisample();
-) : slider64 == 3 ? (
-cabsample();
-);
+wheredowego == 1 ? (unisample());
+wheredowego == 2 ? (dualsample());
+wheredowego == 3 ? (wittisample());
+wheredowego == 4 ? (cabsample());
 
 spl0*=outgaina;
 spl1*=outgaina;
@@ -176,13 +179,21 @@ title_desc("Cabs", "processing | guitar | cabinets");
         ui_split_leftratio(.2);
             control_group("");
             ui_split_topratio(1/4);
-                ui_automate(slider64, multipleway_switch(slider64, "uni", 0, 20, 12));
+                control_button("uni") ? (
+                wheredowego = 1;
+                didwegothere = 1;);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "dual", 1, 20, 12));
+                control_button("dual") ? (
+                wheredowego = 2;
+                didwegothere = 2);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "witty", 2, 20, 12));
+                control_button("witty") ? (
+                wheredowego = 3;
+                didwegothere = 3);
             ui_split_next();
-                ui_automate(slider64, multipleway_switch(slider64, "cab", 3, 20, 12));
+                control_button("cab") ? (
+                wheredowego = 4;
+                didwegothere = 4);
             ui_pop();
         ui_pop();
         
@@ -190,15 +201,10 @@ title_desc("Cabs", "processing | guitar | cabinets");
         ui_split_leftratio(0.8);
         control_group("");
                 
-        slider64 == 0 ? (
-            unigfx();
-        ) : slider64 == 1 ? (
-            dualgfx();
-        ) : slider64 == 2 ? (
-            wittigfx();
-        ) : slider64 == 3 ? (
-            cabgfx();
-        );
+        wheredowego == 1 ? (unigfx());
+        wheredowego == 2 ? (dualgfx());
+        wheredowego == 3 ? (wittigfx());
+        wheredowego == 4 ? (cabgfx());
         
         ui_pop();
         
@@ -236,3 +242,6 @@ ui_pop();
 ) : ui_system();
 
 ui_interacted() ? needs_slider_update = 1;
+
+@serialize
+file_var(0, wheredowego);

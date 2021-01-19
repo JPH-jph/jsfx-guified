@@ -3,18 +3,14 @@
 @init
 
 function hallinit() (
-tmp1 = tmp2 = 0;
+w_tmp1 = w_tmp2 = 0;
 
-g1 = g2 = g3 = g4 = 0.62;
-g5 = 0.62;
-g7 = 0.62;
-g9 = 0.62;
-g11 = 0.62;
+w_g1 = w_g2 = w_g3 = w_g4 = w_g5 = w_g7 = w_g9 = w_g11 = 0.62;
 );
 
 function hallslider() (
-dry = -30 <= -30.0 ? 0.0 : 10^(-30/20);
-wet = 0 <= -30.0 ? 0.0 : 10^(0/20)*0.5;
+w_dry = -30 <= -30.0 ? 0.0 : 10^(-30/20);
+w_wet = 0 <= -30.0 ? 0.0 : 10^(0/20)*0.5;
 d = exp( -2*$pi*slider6/srate );
 
 primenumber=(slider8-1)^2+slider8+40;
@@ -90,67 +86,67 @@ Rb12 = Rb11+Rl11;
 );
 
 function hallsample() (
-input = spl0;
-Rinput = spl1;
+w_input = spl0;
+Rw_input = spl1;
 
 /* LEFT CHANNEL */
-in = spl0;
-in0=in;out0=b0[p0];b0[p0]=in0;p0=(p0+1)%l0;
-in1=out0;out1=b1[p1]-g1*in1;b1[p1]=in1+g1*out1;p1=(p1+1)%l1;
-in2=out1;out2=b2[p2]-g2*in2;b2[p2]=in2+g2*out2;p2=(p2+1)%l2;
-in3=out2;out3=b3[p3]-g3*in3;b3[p3]=in3+g3*out3;p3=(p3+1)%l3;
-in4=out3;out4=b4[p4]-g4*in4;b4[p4]=in4+g4*out4;p4=(p4+1)%l4;
+w_input = spl0;
+w_input0=w_input;w_out0=b0[p0];b0[p0]=w_input0;p0=(p0+1)%l0;
+w_input1=w_out0;w_out1=b1[p1]-w_g1*w_input1;b1[p1]=w_input1+w_g1*w_out1;p1=(p1+1)%l1;
+w_input2=w_out1;w_out2=b2[p2]-w_g2*w_input2;b2[p2]=w_input2+w_g2*w_out2;p2=(p2+1)%l2;
+w_input3=w_out2;w_out3=b3[p3]-w_g3*w_input3;b3[p3]=w_input3+w_g3*w_out3;p3=(p3+1)%l3;
+w_input4=w_out3;w_out4=b4[p4]-w_g4*w_input4;b4[p4]=w_input4+w_g4*w_out4;p4=(p4+1)%l4;
 
-tmp1 = out4 + out12 * f;
-tmp2 = out4 + out8 * f;
+w_tmp1 = w_out4 + w_out12 * f;
+w_tmp2 = w_out4 + w_out8 * f;
 
-tmp1 = t1 = tmp1 + d * (t1-tmp1);
-tmp2 = t2 = tmp2 + d * (t2-tmp2);
+w_tmp1 = t1 = w_tmp1 + d * (t1-w_tmp1);
+w_tmp2 = t2 = w_tmp2 + d * (t2-w_tmp2);
 
-in5=tmp1;out5=b5[p5]-g5*in5;b5[p5]=in5+g5*out5;p5=(p5+1)%l5;
-in6=out5;out6=b6[p6];b6[p6]=in6;p6=(p6+1)%l6;
-in7=out6;out7=b7[p7]-g7*in7;b7[p7]=in7+g7*out7;p7=(p7+1)%l7;
-in8=out7;out8=b8[p8];b8[p8]=in8;p8=(p8+1)%l8;
+w_input5=w_tmp1;w_out5=b5[p5]-w_g5*w_input5;b5[p5]=w_input5+w_g5*w_out5;p5=(p5+1)%l5;
+w_input6=w_out5;w_out6=b6[p6];b6[p6]=w_input6;p6=(p6+1)%l6;
+w_input7=w_out6;w_out7=b7[p7]-w_g7*w_input7;b7[p7]=w_input7+w_g7*w_out7;p7=(p7+1)%l7;
+w_input8=w_out7;w_out8=b8[p8];b8[p8]=w_input8;p8=(p8+1)%l8;
 
-in9 =tmp2;out9=b9[p9]-g9*in9;b9[p9]=in9+g9*out9;p9=(p9+1)%l9;
-in10=out9;out10=b10[p10];b10[p10]=in10;p10=(p10+1)%l10;
-in11=out10;out11=b11[p11]-g11*in11;b11[p11]=in11+g11*out11;p11=(p11+1)%l11;
-in12=out11;out12=b12[p12];b12[p12]=in12;p12=(p12+1)%l12;
+w_input9 =w_tmp2;w_out9=b9[p9]-w_g9*w_input9;b9[p9]=w_input9+w_g9*w_out9;p9=(p9+1)%l9;
+w_input10=w_out9;w_out10=b10[p10];b10[p10]=w_input10;p10=(p10+1)%l10;
+w_input11=w_out10;w_out11=b11[p11]-w_g11*w_input11;b11[p11]=w_input11+w_g11*w_out11;p11=(p11+1)%l11;
+w_input12=w_out11;w_out12=b12[p12];b12[p12]=w_input12;p12=(p12+1)%l12;
 
-out = out5 + out7 + out9 + out11;
+w_out = w_out5 + w_out7 + w_out9 + w_out11;
 
 /* RIGHT CHANNEL */
-Rin = spl1;
-Rin0=Rin;Rout0=Rb0[Rp0];Rb0[Rp0]=Rin0;Rp0=(Rp0+1)%Rl0;
-Rin1=Rout0;Rout1=Rb1[Rp1]-g1*Rin1;Rb1[Rp1]=Rin1+g1*Rout1;Rp1=(Rp1+1)%Rl1;
-Rin2=Rout1;Rout2=Rb2[Rp2]-g2*Rin2;Rb2[Rp2]=Rin2+g2*Rout2;Rp2=(Rp2+1)%Rl2;
-Rin3=Rout2;Rout3=Rb3[Rp3]-g3*Rin3;Rb3[Rp3]=Rin3+g3*Rout3;Rp3=(Rp3+1)%Rl3;
-Rin4=Rout3;Rout4=Rb4[Rp4]-g4*Rin4;Rb4[Rp4]=Rin4+g4*Rout4;Rp4=(Rp4+1)%Rl4;
+Rw_input = spl1;
+Rw_input0=Rw_input;Rw_out0=Rb0[Rp0];Rb0[Rp0]=Rw_input0;Rp0=(Rp0+1)%Rl0;
+Rw_input1=Rw_out0;Rw_out1=Rb1[Rp1]-w_g1*Rw_input1;Rb1[Rp1]=Rw_input1+w_g1*Rw_out1;Rp1=(Rp1+1)%Rl1;
+Rw_input2=Rw_out1;Rw_out2=Rb2[Rp2]-w_g2*Rw_input2;Rb2[Rp2]=Rw_input2+w_g2*Rw_out2;Rp2=(Rp2+1)%Rl2;
+Rw_input3=Rw_out2;Rw_out3=Rb3[Rp3]-w_g3*Rw_input3;Rb3[Rp3]=Rw_input3+w_g3*Rw_out3;Rp3=(Rp3+1)%Rl3;
+Rw_input4=Rw_out3;Rw_out4=Rb4[Rp4]-w_g4*Rw_input4;Rb4[Rp4]=Rw_input4+w_g4*Rw_out4;Rp4=(Rp4+1)%Rl4;
 
-Rtmp1 = Rout4 + Rout12 * f;
-Rtmp2 = Rout4 + Rout8 * f;
+Rw_tmp1 = Rw_out4 + Rw_out12 * f;
+Rw_tmp2 = Rw_out4 + Rw_out8 * f;
 
-Rtmp1 = Rt1 = Rtmp1 + d * (Rt1-Rtmp1);
-Rtmp2 = Rt2 = Rtmp2 + d * (Rt2-Rtmp2);
+Rw_tmp1 = Rt1 = Rw_tmp1 + d * (Rt1-Rw_tmp1);
+Rw_tmp2 = Rt2 = Rw_tmp2 + d * (Rt2-Rw_tmp2);
 
-Rin5=Rtmp1;Rout5=Rb5[Rp5]-g5*Rin5;Rb5[Rp5]=Rin5+g5*Rout5;Rp5=(Rp5+1)%Rl5;
-Rin6=Rout5;Rout6=Rb6[Rp6];Rb6[Rp6]=Rin6;Rp6=(Rp6+1)%Rl6;
-Rin7=Rout6;Rout7=Rb7[Rp7]-g7*Rin7;Rb7[Rp7]=Rin7+g7*Rout7;Rp7=(Rp7+1)%Rl7;
-Rin8=Rout7;Rout8=Rb8[Rp8];Rb8[Rp8]=Rin8;Rp8=(Rp8+1)%Rl8;
+Rw_input5=Rw_tmp1;Rw_out5=Rb5[Rp5]-w_g5*Rw_input5;Rb5[Rp5]=Rw_input5+w_g5*Rw_out5;Rp5=(Rp5+1)%Rl5;
+Rw_input6=Rw_out5;Rw_out6=Rb6[Rp6];Rb6[Rp6]=Rw_input6;Rp6=(Rp6+1)%Rl6;
+Rw_input7=Rw_out6;Rw_out7=Rb7[Rp7]-w_g7*Rw_input7;Rb7[Rp7]=Rw_input7+w_g7*Rw_out7;Rp7=(Rp7+1)%Rl7;
+Rw_input8=Rw_out7;Rw_out8=Rb8[Rp8];Rb8[Rp8]=Rw_input8;Rp8=(Rp8+1)%Rl8;
 
-Rin9=Rtmp2;Rout9=Rb9[Rp9]-g9*Rin9;Rb9[Rp9]=Rin9+g9*Rout9;Rp9=(Rp9+1)%Rl9;
-Rin10=Rout9;Rout10=Rb10[Rp10];Rb10[Rp10]=Rin10;Rp10=(Rp10+1)%Rl10;
-Rin11=Rout10;Rout11=Rb11[Rp11]-g11*Rin11;Rb11[Rp11]=Rin11+g11*Rout11;Rp11=(Rp11+1)%Rl11;
-Rin12=Rout11;Rout12=Rb12[Rp12];Rb12[Rp12]=Rin12;Rp12=(Rp12+1)%Rl12;
+Rw_input9=Rw_tmp2;Rw_out9=Rb9[Rp9]-w_g9*Rw_input9;Rb9[Rp9]=Rw_input9+w_g9*Rw_out9;Rp9=(Rp9+1)%Rl9;
+Rw_input10=Rw_out9;Rw_out10=Rb10[Rp10];Rb10[Rp10]=Rw_input10;Rp10=(Rp10+1)%Rl10;
+Rw_input11=Rw_out10;Rw_out11=Rb11[Rp11]-w_g11*Rw_input11;Rb11[Rp11]=Rw_input11+w_g11*Rw_out11;Rp11=(Rp11+1)%Rl11;
+Rw_input12=Rw_out11;Rw_out12=Rb12[Rp12];Rb12[Rp12]=Rw_input12;Rp12=(Rp12+1)%Rl12;
 
-Rout = Rout5 + Rout7 + Rout9 + Rout11;
+Rw_out = Rw_out5 + Rw_out7 + Rw_out9 + Rw_out11;
 
 // OUTPUT
 slider7 ? (
-spl0 = input*dry + out*wet;
-spl1 = Rinput*dry + Rout*wet;
+spl0 = w_input*w_dry + w_out*w_wet;
+spl1 = Rw_input*w_dry + Rw_out*w_wet;
 ):(
-spl0 = ((input+Rinput)*0.5)*dry + ((out+Rout)*0.5)*wet;
+spl0 = ((w_input+Rw_input)*0.5)*w_dry + ((w_out+Rw_out)*0.5)*w_wet;
 spl1 = spl0;
 );
 );
