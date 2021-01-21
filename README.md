@@ -47,6 +47,7 @@ Right now the collection includes:
 ||degrade (collection of "degrade" plugins by various authors)|
 ||comps (collection of compressor plugins by various authors)|
 ||space (collection of reverb plugins by various authors)|
+||delays (collection of delay plugins by various authors)|
 
 ### Screenshots
 ![Screenshot#1](https://github.com/JPH-jph/jsfx-guified/blob/main/screenshots/filters.png)
