@@ -195,7 +195,7 @@ bpos += 1;
 
 function unigfx() (
         ui_split_leftratio(1/3);
-                sprintf(#selector_text, "%s", 
+        ui_automate(slider1, fixed_dial(slider1, 1, 1, 24, 0, "IR", slider1, 
                         slider1 == 1 ? ("dumble") : 
                         slider1 == 2 ? ("fend bassman") :
                         slider1 == 3 ? ("fend tweed") :
@@ -220,17 +220,10 @@ function unigfx() (
                         slider1 == 22 ? ("green 4x12") :
                         slider1 == 23 ? ("metal 4x12") :
                         slider1 == 24 ? ("modern 4x12")
-                       );
-                // increment, maximum 10
-                next_value = min(24, slider1 + 1);
-                // decrement, minimum 0
-                prev_value = max(1, slider1 - 1);
-
-                ui_automate(slider1, control_selector2(slider1, #selector_text,
-                        next_value, prev_value));
+                                        , 150,50,12));
                 
         ui_split_next();         
-            ui_automate(slider2, labelled_dial(slider2, 0, -120, 30, 0, "gain", slider2, "%.1f dB", 50,50,12));
+            ui_automate(slider2, labelled_dial(slider2, 0, -24, 24, 0, "gain", slider2, "%.1f dB", 50,50,12));
               
         ui_split_next();
             ui_split_topratio(1/4);

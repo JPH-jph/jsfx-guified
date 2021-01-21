@@ -1,0 +1,298 @@
+
+@init
+
+function echoinit() (
+ext_noinit = 1;
+ext_nodenorm = 1;
+
+size = 65536; //set max delay time at max sample rate
+buffer = 4096;
+memset(buffer, 0, size);
+
+ipos = 0;
+env = 0;
+phi = 0;
+dlbuf = 0;
+
+ddl = 0;
+k = 0;
+
+twopi = 2*$pi;
+twopi2 = twopi*100;
+
+fs = srate;
+
+// resample
+pos = 0;
+nn_val = 0; // For nearest-neighbour interpolation
+
+// filter
+mX10 = mX20 = mY10 = mY20 = 0;
+mX11 = mX21 = mY11 = mY21 = 0;
+);
+
+function echoslider() (
+
+(old_s8 != slider46 && slider46 > slider48) ? slider48 = slider46;
+(old_s10 != slider48 && slider48 < slider46) ? slider46 = slider48;
+old_s8 = slider46;
+old_s10 = slider48;
+
+fParam1 = slider40/100; //feedback
+fParam2 = slider41/100; //lfo depth
+fParam3 = slider42; //lfo speed
+fParam4 = slider43/100; //wet mix
+fParam5 = 0.5; //output
+
+fParam6 = slider44; //stages
+fParam7 = ceil((slider45/100)*srate); //delay
+fParam8 = slider46; //hp filter
+fParam9 = slider47; //hp res
+fParam10 = slider48; //lp filter
+fParam11 = slider49; //lp res
+fParam12 = ceil((slider50/100)*srate); //clock offset
+fParam13 = slider51; //clock scale
+fParam14 = slider52; //clock curve
+fParam15 = slider53; //hiss
+
+// stages
+bits = (fParam6+2|0);
+bits<0 ? bits=0 : bits>12 ? bits=12;
+stages = 2^(bits+4);
+
+// delay
+delay = fParam7;
+slider54 == 0 ? (
+    del = (stages/srate)*delay
+);
+slider54 == 1 ? (
+    slider64 == 17 ? (del = sixtyfourthtr()/1000*srate);
+    slider64 == 16 ? (del = sixtyfourth()/1000*srate);
+    slider64 == 15 ? (del = thirtytwothtr()/1000*srate);
+    slider64 == 14 ? (del = thirtytwoth()/1000*srate);
+    slider64 == 13 ? (del = sixteenthtr()/1000*srate);
+    slider64 == 12 ? (del = sixteenth()/1000*srate);
+    slider64 == 11 ? (del = eighthtr()/1000*srate);
+    slider64 == 10 ? (del = eighth()/1000*srate);
+    slider64 == 9 ? (del = fourthtr()/1000*srate);
+    slider64 == 8 ? (del = fourth()/1000*srate);
+    slider64 == 7 ? (del = halftr()/1000*srate);
+    slider64 == 6 ? (del = half()/1000*srate);
+    slider64 == 5 ? (del = wholetr()/1000*srate);
+    slider64 == 4 ? (del = whole()/1000*srate);
+    slider64 == 3 ? (del = twotr()/1000*srate);
+    slider64 == 2 ? (del = two()/1000*srate);
+    slider64 == 1 ? (del = four()/1000*srate);
+);
+
+mod = 0.49 * fParam2 * del; //mod = 0.049 * fParam2 * del;
+
+fbk = abs(2.2 * fParam1 - 1.1);
+(fParam1>0.5) ? (rel=0.9997; ):( rel=0.8; ); //limit or clip
+
+wet = 1 - fParam4;
+wet = fParam5 * (1 - wet * wet); //-3dB at 50% mix
+dry = fParam5 * 2 * (1 - fParam4 * fParam4);
+
+dphi = (twopi2 * pow(10, 3 * fParam3 - 2) / fs); //100-sample steps
+
+// clock
+clock = max(min((((delay ^ fParam14 ) * fParam13 ) + fParam12)|0,fs),0);
+
+// resample
+samples = fs/clock;
+
+// filter hp
+sx0 = 16+fParam8*1.20103;
+cx0 = floor(exp(sx0*log(1.059))*8.17742);
+cutoff0 = 2 * cx0 / fs;
+resx0 = (0.5 * fParam9) - 0.25;
+res0 = pow(10, -resx0);
+kx0 = 0.5 * res0 * sin($pi * cutoff0);
+c10 = 0.5 * (1 - kx0) / (1 + kx0);
+c20 = (0.5 + c10) * cos($pi * cutoff0);
+c30 = (0.5 + c10 + c20) * 0.25;
+
+mA00 = 2 * c30;
+mA10 = -4 * c30;
+mA20 = 2 * c30;
+mB10 = -2 * c20;
+mB20 = 2 * c10;
+
+// filter lp
+sx1 = 16+fParam10*1.20103;
+cx1 = floor(exp(sx1*log(1.059))*8.17742);
+cutoff1 = 2 * cx1 / fs;
+resx1 = (0.5 * fParam11) - 0.25;
+res1 = pow(10, -resx1);
+kx1 = 0.5 * res1 * sin($pi * cutoff1);
+c11 = 0.5 * (1 - kx1) / (1 + kx1);
+c21 = (0.5 + c11) * cos($pi * cutoff1);
+c31 = (0.5 + c11 - c21) * 0.25;
+
+mA01 = 2 * c31;
+mA11 = 4 * c31;
+mA21 = 2 * c31;
+mB11 = -2 * c21;
+mB21 = 2 * c11;
+
+// noise
+hiss = fParam15 * 0.05;
+);
+
+function echosample() (
+dl=dlbuf;
+db=dlbuf;
+i=ipos;
+
+a = spl0;
+b = spl1;
+c = (spl0+spl1)*0.5;
+noise = (lp+=(((rand(2)-1)-lp) * 0.02)) * hiss; //white noise lp-filtered ~140Hz
+
+// resample using NN interpolation
+(pos % floor(samples) > 0) ? (
+c = nn_val;
+pos += 1;
+(pos >= fs) ? (pos = 0);
+) : (
+nn_val = c;
+pos += 1;
+);
+
+(k==0) ? //update delay length at slower rate (could be improved!)
+(
+db += 0.01 * (del - db - mod - mod * sin(phi)); //smoothed delay+lfo
+ddl = 0.01 * (db - dl); //linear step
+phi += dphi;
+(phi>twopi) ? phi-=twopi;
+k = 100;
+);
+k -= 1;
+dl += ddl; //lin interp between points
+
+i -= 1;
+(i<0) ? i = size; //delay positions
+
+l = dl|0;
+tmp = dl - l; //remainder
+
+l += i;
+(l>size) ? l -= (size+1);
+
+ol = buf[buffer + l]; //delay output
+
+l += 1;
+(l>size) ? l = 0; 
+ol += tmp * (buf[buffer + l] - ol); //lin interp
+
+ol += noise;
+
+tmp = c + fbk * ol; //mix input (Mono!) & feedback
+
+// filter hp
+in0 = tmp;
+out0 = mA00*in0 + mA10*mX10 + mA20*mX20 - mB10*mY10 - mB20*mY20;
+mX20 = mX10;
+mX10 = in0;
+mY20 = mY10;
+mY10 = out0;
+tmp = out0;
+
+// filter lp
+in1 = tmp;
+out1 = mA01*in1 + mA11*mX11 + mA21*mX21 - mB11*mY11 - mB21*mY21;
+mX21 = mX11;
+mX11 = in1;
+mY21 = mY11;
+mY11 = out1;
+tmp = out1;
+
+g=(tmp<0) ? -tmp : tmp; //simple limiter
+env *= rel;
+(g>env) ? env = g;
+(env>1) ? tmp /= env;
+
+buf[buffer + i] = tmp; //delay input
+
+ol *= wet; //wet
+
+spl0 = dry * a + ol; //dry
+spl1 = dry * b + ol;
+
+ipos = i;
+dlbuf = dl;
+);
+
+function echogfx() (
+ui_split_leftratio(1/8);
+ui_split_topratio(0.6);
+    ui_automate(slider45, labelled_dial(slider45, 30, 0.1, 100, 0, "delay", (del*1000/srate), "%.1f ms", 50,50,12));
+ui_split_next();
+    ui_automate(slider44, fixed_dial(slider44, 9, 0, 10, 0, "", slider44, slider44 == 0 ? ("0") : "%.i", 30,30,12));
+ui_pop();
+ui_split_next();
+ui_split_topratio(0.6);
+    ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                slider64 == 17 ? ("1/64 tr") :
+                                slider64 == 16 ? ("1/64") :
+                                slider64 == 15 ? ("1/32 tr") :
+                                slider64 == 14 ? ("1/32") :
+                                slider64 == 13 ? ("1/16 tr") :
+                                slider64 == 12 ? ("1/16") :
+                                slider64 == 11 ? ("1/8 tr") :
+                                slider64 == 10 ? ("1/8") :
+                                slider64 == 9 ? ("1/4 tr") :
+                                slider64 == 8 ? ("1/4") :
+                                slider64 == 7 ? ("1/2 tr") : 
+                                slider64 == 6 ? ("1/2") :
+                                slider64 == 5 ? ("1/1 tr") :
+                                slider64 == 4 ? ("1/1") :
+                                slider64 == 3 ? ("2/1 tr") :
+                                slider64 == 2 ? ("2/1") :
+                                slider64 == 1 ? ("4/1"), 50,50,12));
+ui_split_next();
+    ui_automate(slider54, oneway_switch_midb(slider54, "", 20, 12));
+ui_pop();
+ui_split_next();
+    ui_automate(slider40, labelled_dial(slider40, 80, 0, 100, 0, "feedback", slider40, "%.1f %%", 50,50,12));
+ui_split_next();
+    control_group_nopad("");
+    ui_split_topratio(1/2);
+        ui_automate(slider46, labelled_dial(slider46, 30, 0, 100, 0, "hp freq", cx0, "%.i Hz", 50,50,12));
+    ui_split_next();
+        ui_automate(slider47, labelled_dial(slider47, 0.5, 0, 1, 0, "hp res", 20*resx0, "%.1f dB", 50,50,12));
+    ui_pop();
+ui_split_next();
+    control_group_nopad("");
+    ui_split_topratio(1/2);
+        ui_automate(slider48, labelled_dial(slider48, 80, 0, 100, 0, "lp freq", cx1, "%.i Hz", 50,50,12));
+    ui_split_next();
+        ui_automate(slider49, labelled_dial(slider49, 0.5, 0, 1, 0, "lp res", 20*resx1, "%.1f dB", 50,50,12));
+    ui_pop();
+ui_split_next();
+    control_group_nopad("");
+    ui_split_topratio(1/2);
+        ui_automate(slider41, labelled_dial(slider41, 1, 0, 100, 0, "lfo depth", slider41, "%.1f %%", 50,50,12));
+    ui_split_next();
+        ui_automate(slider42, labelled_dial(slider42, 0.65, 0, 1, 0, "lfo speed", pow(10, 2 - 3 * fParam3), "%.1f sec", 50,50,12));
+    ui_pop();
+ui_split_next();
+    control_group_nopad("");
+    ui_split_topratio(0.4);
+        ui_automate(slider50, labelled_dial(slider50, 100, 0, 100, 0, "ds", clock, "%.i", 50,50,12));
+    ui_pop();
+        ui_split_topratio(1/2);
+            ui_automate(slider51, labelled_dial(slider51, 1, 0, 1, 0, "", "", "scale", 35,40,12));
+        ui_split_next();
+            ui_automate(slider52, labelled_dial(slider52, 1, 0.8, 1.2, 0, "", "", "curve", 35,40,12));
+        ui_pop();
+ui_split_next();
+    control_group_nopad("");
+    ui_split_topratio(1/2);
+        ui_automate(slider53, labelled_dial(slider53, 0, 0, 1, 0, "hiss", 20 * log10(hiss/11), "%.1f dB", 50,50,12));
+    ui_split_next();
+        ui_automate(slider43, labelled_dial(slider43, 45, 0, 100, 0, "wet", slider43, "%.1f %%", 50,50,12));
+    ui_pop();
+ui_pop();
+);

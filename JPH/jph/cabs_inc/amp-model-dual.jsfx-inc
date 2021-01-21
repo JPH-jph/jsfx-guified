@@ -44,6 +44,30 @@ function dualslider() (
     filehandle=file_open(16);
     ) : slider5 == 12 ? (
     filehandle=file_open(17);
+    ) : slider5 == 13 ? (
+    filehandle=file_open(18);
+    ) : slider5 == 14 ? (
+    filehandle=file_open(19);
+    ) : slider5 == 15 ? (
+    filehandle=file_open(20);
+    ) : slider5 == 16 ? (
+    filehandle=file_open(21);
+    ) : slider5 == 17 ? (
+    filehandle=file_open(22);
+    ) : slider5 == 18 ? (
+    filehandle=file_open(23);
+    ) : slider5 == 19 ? (
+    filehandle=file_open(24);
+    ) : slider5 == 20 ? (
+    filehandle=file_open(25);
+    ) : slider5 == 21 ? (
+    filehandle=file_open(26);
+    ) : slider5 == 22 ? (
+    filehandle=file_open(27);
+    ) : slider5 == 23 ? (
+    filehandle=file_open(28);
+    ) : slider5 == 24 ? (
+    filehandle=file_open(29);
     );
     
     impbuf_nch=impbuf_srate=impbuf_l=0;
@@ -89,6 +113,30 @@ function dualslider() (
     filehandle=file_open(16);
     ) : slider6 == 12 ? (
     filehandle=file_open(17);
+    ) : slider6 == 13 ? (
+    filehandle=file_open(18);
+    ) : slider6 == 14 ? (
+    filehandle=file_open(19);
+    ) : slider6 == 15 ? (
+    filehandle=file_open(20);
+    ) : slider6 == 16 ? (
+    filehandle=file_open(21);
+    ) : slider6 == 17 ? (
+    filehandle=file_open(22);
+    ) : slider6 == 18 ? (
+    filehandle=file_open(23);
+    ) : slider6 == 19 ? (
+    filehandle=file_open(24);
+    ) : slider6 == 20 ? (
+    filehandle=file_open(25);
+    ) : slider6 == 21 ? (
+    filehandle=file_open(26);
+    ) : slider6 == 22 ? (
+    filehandle=file_open(27);
+    ) : slider6 == 23 ? (
+    filehandle=file_open(28);
+    ) : slider6 == 24 ? (
+    filehandle=file_open(29);
     );
     
     rimpbuf_nch=rimpbuf_srate=rimpbuf_l=0;
@@ -222,56 +270,66 @@ bpos += 1;
 function dualgfx() (
         ui_split_leftratio(1/3);
             ui_split_topratio(1/2);
-                sprintf(#selector_text, "%s", 
+        ui_automate(slider5, fixed_dial(slider5, 1, 1, 24, 0, "IR L", slider5, 
                         slider5 == 1 ? ("dumble") : 
-                        slider5 == 2 ? ("fender b") :
-                        slider5 == 3 ? ("fender b2") :
-                        slider5 == 4 ? ("fender d") :
-                        slider5 == 5 ? ("fender d2") :
-                        slider5 == 6 ? ("marshall jcm") :
-                        slider5 == 7 ? ("marshall jcm") :
-                        slider5 == 8 ? ("marshall jtm") :
-                        slider5 == 9 ? ("marshall jtm2") :
+                        slider5 == 2 ? ("fend bassman") :
+                        slider5 == 3 ? ("fend tweed") :
+                        slider5 == 4 ? ("fend del") :
+                        slider5 == 5 ? ("fend del 70") :
+                        slider5 == 6 ? ("marsh jcm800") :
+                        slider5 == 7 ? ("marsh jcm800S") :
+                        slider5 == 8 ? ("marsh jtm") :
+                        slider5 == 9 ? ("marsh jtmS") :
                         slider5 == 10 ? ("mesa") :
-                        slider5 == 11 ? ("mesa2") :
-                        slider5 == 12 ? ("vox")
-                       );
-                // increment, maximum 10
-                next_value = min(12, slider5 + 1);
-                // decrement, minimum 0
-                prev_value = max(1, slider5 - 1);
-
-                ui_automate(slider5, control_selector2(slider5, #selector_text,
-                        next_value, prev_value));
+                        slider5 == 11 ? ("mesaS") :
+                        slider5 == 12 ? ("vox") :
+                        slider5 == 13 ? ("tweed 1x12") : 
+                        slider5 == 14 ? ("dark 1x15") :
+                        slider5 == 15 ? ("1936 2x12") :
+                        slider5 == 16 ? ("ac 2x12") :
+                        slider5 == 17 ? ("boutique 2x12") :
+                        slider5 == 18 ? ("black 4x10") :
+                        slider5 == 19 ? ("1960 4x12") :
+                        slider5 == 20 ? ("boxy 4x12") :
+                        slider5 == 21 ? ("classic 4x12") :
+                        slider5 == 22 ? ("green 4x12") :
+                        slider5 == 23 ? ("metal 4x12") :
+                        slider5 == 24 ? ("modern 4x12")
+                                        , 150,50,12));
 
             ui_split_next();
             
-                sprintf(#selector_text2, "%s", 
+        ui_automate(slider6, fixed_dial(slider6, 1, 1, 24, 0, "IR R", slider6, 
                         slider6 == 1 ? ("dumble") : 
-                        slider6 == 2 ? ("fender b") :
-                        slider6 == 3 ? ("fender b2") :
-                        slider6 == 4 ? ("fender d") :
-                        slider6 == 5 ? ("fender d2") :
-                        slider6 == 6 ? ("marshall jcm") :
-                        slider6 == 7 ? ("marshall jcm") :
-                        slider6 == 8 ? ("marshall jtm") :
-                        slider6 == 9 ? ("marshall jtm2") :
+                        slider6 == 2 ? ("fend bassman") :
+                        slider6 == 3 ? ("fend tweed") :
+                        slider6 == 4 ? ("fend del") :
+                        slider6 == 5 ? ("fend del 70") :
+                        slider6 == 6 ? ("marsh jcm800") :
+                        slider6 == 7 ? ("marsh jcm800S") :
+                        slider6 == 8 ? ("marsh jtm") :
+                        slider6 == 9 ? ("marsh jtmS") :
                         slider6 == 10 ? ("mesa") :
-                        slider6 == 11 ? ("mesa2") :
-                        slider6 == 12 ? ("vox")
-                       );
-                // increment, maximum 10
-                next_value2 = min(12, slider6 + 1);
-                // decrement, minimum 0
-                prev_value2 = max(1, slider6 - 1);
-
-                ui_automate(slider6, control_selector2(slider6, #selector_text2,
-                        next_value2, prev_value2));
+                        slider6 == 11 ? ("mesaS") :
+                        slider6 == 12 ? ("vox") :
+                        slider6 == 13 ? ("tweed 1x12") : 
+                        slider6 == 14 ? ("dark 1x15") :
+                        slider6 == 15 ? ("1936 2x12") :
+                        slider6 == 16 ? ("ac 2x12") :
+                        slider6 == 17 ? ("boutique 2x12") :
+                        slider6 == 18 ? ("black 4x10") :
+                        slider6 == 19 ? ("1960 4x12") :
+                        slider6 == 20 ? ("boxy 4x12") :
+                        slider6 == 21 ? ("classic 4x12") :
+                        slider6 == 22 ? ("green 4x12") :
+                        slider6 == 23 ? ("metal 4x12") :
+                        slider6 == 24 ? ("modern 4x12")
+                                        , 150,50,12));
             
                 ui_pop();
                 
         ui_split_next();         
-            ui_automate(slider7, labelled_dial(slider7, 0, -120, 30, 0, "gain", slider7, "%.1f dB", 50,50,12));
+            ui_automate(slider7, labelled_dial(slider7, 0, -24, 24, 0, "gain", slider7, "%.1f dB", 50,50,12));
               
         ui_split_next();
             ui_automate(slider8, labelled_switch_mid(slider8, "", "upsample"));

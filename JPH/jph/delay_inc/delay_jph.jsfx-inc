@@ -1,0 +1,122 @@
+//author: JPH
+
+@init
+
+function jphslider() (
+odelayB=delaylenB;
+delaylenB=min(slider55 * srate / 1000,500000);
+odelayB != delaylenB ? (
+!slider6 && delayposB >= delaylenB ? delayposB = 0;
+  );
+
+odelayA=delaylenA;
+delaylenA=min(slider1 * srate / 1000,500000);
+odelayA != delaylenA ? (
+!slider6 && delayposA >= delaylenA ? delayposA = 0;
+  );
+
+freembuf(max(delaylenA*2,delaylenB*2));
+
+wetmix = 2 ^(slider2/6);
+drymix = 2 ^(slider3/6);
+wetmix2 = 2 ^(slider4/6);
+drymix2 = 2 ^(slider5/6);
+
+old_slider61 != slider61 ? (
+    slider61 == 17 ? (slider55 = sixtyfourthtr());
+    slider61 == 16 ? (slider55 = sixtyfourth());
+    slider61 == 15 ? (slider55 = thirtytwothtr());
+    slider61 == 14 ? (slider55 = thirtytwoth());
+    slider61 == 13 ? (slider55 = sixteenthtr());
+    slider61 == 12 ? (slider55 = sixteenth());
+    slider61 == 11 ? (slider55 = eighthtr());
+    slider61 == 10 ? (slider55 = eighth());
+    slider61 == 9 ? (slider55 = fourthtr());
+    slider61 == 8 ? (slider55 = fourth());
+    slider61 == 7 ? (slider55 = halftr());
+    slider61 == 6 ? (slider55 = half());
+    slider61 == 5 ? (slider55 = wholetr());
+    slider61 == 4 ? (slider55 = whole());
+    slider61 == 3 ? (slider55 = twotr());
+    slider61 == 2 ? (slider55 = two());
+    slider61 == 1 ? (slider55 = four());
+    
+    old_slider61 = slider61;
+);
+);
+
+function jphsample() (
+dpintA = delayposA*2;
+dpintB = delayposB*2;
+os1=dpintA[0];
+os2=dpintB[1];
+
+dpintA[0]=min(max(spl0*drymix + os1*wetmix,-4),4);
+dpintB[1]=min(max(spl1*drymix + os2*wetmix,-4),4);
+
+(delayposA+=1) >= delaylenA ? delayposA=0;
+(delayposB+=1) >= delaylenB ? delayposB=0;
+
+spl0=spl0*drymix2 + os1*wetmix2;
+spl1=spl1*drymix2 + os2*wetmix2;
+);
+
+function jphgfx() (
+        ui_split_leftratio(1/6);
+            ui_split_bottomratio(0.5);
+                ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync L", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_split_next();
+                ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms L", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_pop();
+        ui_split_next();
+            ui_split_bottomratio(0.5);
+                ui_automate(slider61, fixed_delaydial(slider61, 8, 17, 1, -2, "sync R", slider61,
+                                            slider61 == 17 ? ("1/64 tr") :
+                                            slider61 == 16 ? ("1/64") :
+                                            slider61 == 15 ? ("1/32 tr") :
+                                            slider61 == 14 ? ("1/32") :
+                                            slider61 == 13 ? ("1/16 tr") :
+                                            slider61 == 12 ? ("1/16") :
+                                            slider61 == 11 ? ("1/8 tr") :
+                                            slider61 == 10 ? ("1/8") :
+                                            slider61 == 9 ? ("1/4 tr") :
+                                            slider61 == 8 ? ("1/4") :
+                                            slider61 == 7 ? ("1/2 tr") : 
+                                            slider61 == 6 ? ("1/2") :
+                                            slider61 == 5 ? ("1/1 tr") :
+                                            slider61 == 4 ? ("1/1") :
+                                            slider61 == 3 ? ("2/1 tr") :
+                                            slider61 == 2 ? ("2/1") :
+                                            slider61 == 1 ? ("4/1"), 50,50,12));
+        ui_split_next();
+                ui_automate(slider55, labelled_dial(slider55, 300, 0, 4000, 0, "ms R", slider55, slider55 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_pop();
+        ui_split_next();
+            ui_automate(slider2, labelled_dial(slider2, -5, -24, 0, 0, "feedback", slider2, "%.1f dB", 50,50,12));
+        ui_pop();
+        control_group_nopad("");
+        ui_split_leftratio(1/3);
+            ui_automate(slider3, labelled_dial(slider3, 0, -24, 6, 0, "mix in", slider3, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider4, labelled_dial(slider4, -6, -48, 6, 0, "wet", slider4, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 0, -48, 6, 0, "dry", slider5, "%.1f dB", 50,50,12));
+        ui_pop();
+);

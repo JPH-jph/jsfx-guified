@@ -1,0 +1,103 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+// desc: Delay w/Stereo Bounce
+//tags: delay ping-pong
+//author: Cockos
+
+
+
+@init
+
+function bounceslider() (
+odelay=delaylen;
+delaylen=min(slider1 * srate / 1000,500000);
+odelay != delaylen ? (
+  slider6 && odelay > delaylen ? (
+      // resample down delay buffer, heh
+      rspos=0; rspos2=0;
+      drspos=odelay/delaylen;
+      loop(delaylen,
+         
+         tpos = ((rspos)|0)*2;
+         rspos2[0]=tpos[0];
+         rspos2[1]=tpos[1];
+         rspos2+=2;
+         rspos+=drspos;
+      );
+      delaypos /= drspos;
+      delaypos|=0;
+  ) : (
+    slider6 && odelay < delaylen ? (
+        // resample up delay buffer, heh
+        drspos=odelay/delaylen;
+        rspos=odelay; 
+        rspos2=delaylen*2;
+        loop(delaylen,
+           rspos-=drspos;
+           rspos2-=2;
+         
+           tpos = ((rspos)|0)*2;
+           rspos2[0]=tpos[0];
+           rspos2[1]=tpos[1];
+        );
+        delaypos /= drspos;
+        delaypos|=0;
+    ) : (!slider6 && delaypos >= delaylen ? delaypos = 0);
+  );
+  delaypos<0?delaypos=0;
+  freembuf(delaylen*2);
+);
+wetmix = 2 ^(slider2/6);
+drymix = (2 ^(slider7/6)) * 0.5;
+wetmix2 = 2 ^(slider8/6);
+drymix2 = 2 ^(slider5/6);
+);
+
+function bouncesample() (
+dpint = delaypos*2;
+os1=dpint[0];
+os2=dpint[1];
+dpint[0]=min(max((spl0+spl1)*drymix + os2*wetmix,-4),4);
+dpint[1]=min(max(os1*wetmix,-4),4);
+(delaypos+=1) >= delaylen ? delaypos=0;
+spl0=spl0*drymix2 + os1*wetmix2;
+spl1=spl0*drymix2 + os2*wetmix2;
+);
+
+function bouncegfx() (
+        ui_split_leftratio(1/6);
+            ui_split_bottomratio(0.3);
+                ui_automate(slider6, oneway_switch_midb(slider6, "resample", 20, 12));
+            ui_pop();
+                ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_split_next();
+                ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_pop();
+        control_group_nopad("");
+        ui_split_leftratio(1/4);
+            ui_automate(slider7, labelled_dial(slider7, -6, -24, 0, 0, "update wet", slider7, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider8, labelled_dial(slider8, -6, -24, 0, 0, "update dry", slider8, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider4, labelled_dial(slider4, -6, -48, 6, 0, "wet", slider4, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 0, -48, 6, 0, "dry", slider5, "%.1f dB", 50,50,12));
+        ui_pop();
+);

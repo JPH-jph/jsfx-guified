@@ -1,0 +1,96 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+// desc: Delay w/Chorus
+//tags: delay chorus modulation
+//author: Cockos
+
+@init
+
+function chorusslider() (
+odelay=delaylen;
+delaylen=min(slider1 * srate / 1000,500000);
+odelay != delaylen ? freembuf(delaylen*2);
+
+wetmix = 2 ^ (slider2/6);
+drymix = 1;
+wetmix2 = 2 ^ (slider22/6);
+wetmix3 = 2 ^ (slider4/6);
+drymix2 = 2 ^ (slider5/6);
+dppossc = $pi/(slider23 * srate * 0.001);
+dpbacksc = min(max(slider24/slider1,0),1)*delaylen*0.5 - 1;
+);
+
+function chorussample() (
+dppos = dppos+dppossc;
+dpback = (sin(dppos)+1)*dpbacksc;
+dpint = delaypos-dpback-1;
+dpint < 0 ? dpint += delaylen;
+dpinto=dpint;
+dpint=(0|dpint);
+frac=dpinto-dpint;
+dpint2=dpint>=(delaylen-1)?0:(dpint+1);
+
+dpint += dpint;
+dpint2 += dpint2;
+
+os1=dpint[0]*(1-frac)+frac*dpint2[0];
+os2=dpint[1]*(1-frac)+frac*dpint2[1];
+
+dpint = delaypos*2;
+
+oss1=dpint[0];
+oss2=dpint[1];
+
+dpint[0]=min(max(spl0*drymix + oss1*wetmix,-4),4);
+dpint[1]=min(max(spl1*drymix + oss2*wetmix,-4),4);
+
+(delaypos+=1) >= delaylen ? delaypos=0;
+
+spl0=spl0*drymix2 + os1*wetmix2 + oss1*wetmix3;
+spl1=spl1*drymix2 + os2*wetmix2 + oss2*wetmix3;
+);
+
+function chorusgfx() (
+        ui_split_leftratio(1/9);
+            ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_split_next();
+
+            ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_pop();
+        ui_split_leftratio(1/2);
+        control_group_nopad("");
+        ui_split_leftratio(1/3);
+            ui_automate(slider2, labelled_dial(slider2, -5, -24, 0, 0, "feedback", slider2, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider24, labelled_dial(slider24, 2, 0, 100, 0, "chorus\nlength", slider24, "%.1f ms", 50,50,12));
+        ui_split_next();
+            ui_automate(slider23, labelled_dial(slider23, 500, 1, 1000, 0, "chorus\nperiod", slider23, "%.1f ms", 50,50,12));
+        ui_pop();
+        ui_pop();
+        
+        control_group_nopad("");
+        ui_split_leftratio(1/3);
+            ui_automate(slider4, labelled_dial(slider4, -6, -48, 6, 0, "  wet\nclean", slider4, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider22, labelled_dial(slider22, -6, -48, 6, 0, "  wet\nchorus", slider22, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 0, -48, 6, 0, "dry", slider5, "%.1f dB", 50,50,12));
+        ui_pop();
+);

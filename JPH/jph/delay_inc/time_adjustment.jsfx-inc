@@ -1,0 +1,69 @@
+// desc:Time Adjustment Delay
+// desc:Time Adjustment Delay or Negative Delay
+//tags: delay time PDC
+//author: Cockos
+
+
+@init
+
+function negativeslider() (
+wet=2^(slider4/6);
+dry=2^(slider5/6);
+delaylen = (slider1*srate*0.001 + slider12)|0;
+delaylen<0?(
+  pdc_delay=-delaylen;  
+  pdc_top_ch=2;
+  pdc_bot_ch=0;
+  delaylen=0;
+):(
+delaylen+=pdc_delay;
+//pdc_delay=0;
+);
+bufsize=srate*4.0; // extra in case the user wants to go over
+);
+
+function negativesample() (
+bpos[0]=spl0;
+bpos[1]=spl1;
+
+rdpos=bpos-delaylen*2;
+rdpos<0 ? rdpos+=bufsize*2;
+spl0=spl0*dry+rdpos[0]*wet;
+spl1=spl1*dry+rdpos[1]*wet;
+
+bpos+=2;
+bpos>=bufsize*2 ? bpos=0;
+);
+
+function negativegfx() (
+        ui_split_leftratio(1/5);
+                ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_split_next();
+                ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_split_next();
+            ui_automate(slider12, labelled_dial(slider12, 0, -40000, 40000, 0, "add delay", slider12, slider12 == 0 ? ("0 spls") : ("%.i spls"), 50,50,12));
+        ui_pop();
+        control_group_nopad("");
+        ui_split_leftratio(1/2);
+            ui_automate(slider4, labelled_dial(slider4, -6, -48, 6, 0, "wet", slider4, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 0, -48, 6, 0, "dry", slider5, "%.1f dB", 50,50,12));
+        ui_pop();
+);

@@ -1,0 +1,82 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+// desc: Delay w/Tempo Ping-Pong
+// desc: Delay with Tempo Ping-Pong [Stillwell]
+//tags: delay stereo
+//author: Stillwell
+
+@init
+
+function pongslider() (
+delaylen=min(slider1 * srate / 1000,500000);
+  odelay=delaylen;
+  wetmix = 2 ^(slider2/6);
+  drymix = 2 ^(slider3/6);
+  wetmix2 = 2 ^(slider4/6);
+  drymix2 = 2 ^(slider5/6);
+  pongwidth = pctFeedback/100;
+  pongpan=(1-pongwidth)/2;
+);
+
+function pongsample() (
+  dpint = delaypos*2;
+  os1=dpint[0];
+  os2=dpint[1];
+
+  dpint[0]=min(max(spl0*drymix + os1*wetmix,-4),4);
+  dpint[1]=min(max(spl1*drymix + os2*wetmix,-4),4);
+
+  switching=0;
+
+  abs(delaypos)<400 ? (
+    switch = pongloc ? abs(delaypos)/400 : ((400 - abs(delaypos))/400);
+  );
+
+  (delaypos+=1) >= delaylen ? (
+    delaypos=0;
+    pongloc = (pongloc * -1) + 1;
+  );
+
+  os = (os1 + os2) / 2;
+  panloc = pongpan + pongwidth * switch;
+
+  spl0=spl0*drymix2 + os*wetmix2*(panloc);
+  spl1=spl1*drymix2 + os*wetmix2*(1-panloc);
+);
+
+function ponggfx() (
+        ui_split_leftratio(1/7);
+                ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_split_next();
+                ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_split_next();
+            ui_automate(slider2, labelled_dial(slider2, -5, -24, 0, 0, "feedback", slider2, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(pctFeedback, labelled_dial(pctFeedback, 50, 0, 100, 0, "pong width", pctFeedback, "%.1f %%", 50,50,12));
+        ui_pop();
+        control_group_nopad("");
+        ui_split_leftratio(1/3);
+            ui_automate(slider3, labelled_dial(slider3, 0, -24, 6, 0, "mix in", slider3, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider4, labelled_dial(slider4, -6, -48, 6, 0, "wet", slider4, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 0, -48, 6, 0, "dry", slider5, "%.1f dB", 50,50,12));
+        ui_pop();
+);

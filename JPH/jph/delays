@@ -1,0 +1,376 @@
+desc: Delays - GUI
+//see plugin description
+
+//////////////////////////////////////////
+import ../ui-lib/ui-lib.jsfx-inc
+import ../ui-lib/ui-lib-compat.jsfx-inc
+filename:0,../ui-lib/bitmap/theme-dark-orange.png
+filename:1,../ui-lib/bitmap/theme-light-orange.png
+filename:2,../ui-lib/bitmap/theme-sunny.png
+filename:3,../ui-lib/bitmap/theme-retro.png
+filename:4,../ui-lib/bitmap/theme-blue.png
+filename:5,../ui-lib/bitmap/theme-pattern.png
+//////////////////////////////////////////
+
+import /delay_inc/delay.jsfx-inc
+import /delay_inc/delay_chfun.jsfx-inc
+import /delay_inc/delay_lowres.jsfx-inc
+import /delay_inc/delay_varlen.jsfx-inc
+import /delay_inc/time_adjustment.jsfx-inc
+import /delay_inc/delay_tone.jsfx-inc
+import /delay_inc/delay_sustain.jsfx-inc
+import /delay_inc/delay_chorus.jsfx-inc
+import /delay_inc/filthy_delay.jsfx-inc
+import /delay_inc/floaty_delay.jsfx-inc
+import /delay_inc/reverseness.jsfx-inc
+import /delay_inc/delay_pong.jsfx-inc
+import /delay_inc/bbd_echo.jsfx-inc
+import /delay_inc/delay_jph.jsfx-inc
+
+slider1:300<0.1,10000,20>-Delay (ms)    ---global---
+slider2:-5<-24,0,1>-Feedback (dB)    ---delay/bounce/lofi/tone/sustain/chorus/reverse/pong---
+slider3:0<-24,6,1>-Mix In (dB)
+slider4:-6<-48,6,1>-Output Wet (dB)
+slider5:0<-48,6,1>-Output Dry (dB)
+slider6:1<0,1,1{Off,On}>-Resample On Length Change
+
+slider7:-6<-24,0,1>-Update Wet (dB)    ---bounce/lofi/varlen---
+slider8:-6<-24,0,1>-Update Dry (dB)
+
+slider9:8<1,24,1>-Resolution (bits)    ---lofi---
+
+slider10:1<0.001,30,0.1>-Period (sec)    ---varlen---
+slider11:0.3<0.001,1.0,0.01>-Amplitude (ratio)
+
+slider12:0<-40000,40000,1>-Additional Delay Amount (spls)    ---negative---
+
+slider13:0<-24,6,0.1>-Bass Gain (dB)    ---tone---
+slider14:200<20,24000,10>-Bass Frequency (Hz)
+slider15:0<-24,6,0.1>-Treble Gain (dB)
+slider16:4000<20,24000,10>-Treble Frequency (Hz)
+slider17:0.5<0,1,0.01>-Output Mix
+
+slider18:-44<-120,6,1>-Threshold (dB)    ---sustain---
+slider19:10<0,1000,1>-Attack (ms)
+slider20:10<0,1000,1>-Release (ms)
+slider21:0<-48,0,1>-Maximum Mixing (dB)
+
+slider22:-6<-48,6,1>-Output Wet (Chorus) (dB)    ---chorus---
+slider23:500<1,1000,10>-Chorus Period (ms)
+slider24:2<0,100,1>-Chorus Length (ms)
+
+slider25:channels=0<0,3,{Stereo,Inverted,Ping-Pong,Mono}>-Delay routing    ---filthy/floaty/reverse/pong---
+slider26:pctFeedback=50<0,100,0.01>-Feedback [%]
+slider27:frqHighpass=250<20,1000,0.1>-Feedback HP [Hz]
+slider28:frqLowpass=10000<2000,20000,10>-Feedback LP [Hz]
+slider29:fdbDirty=1<0,1,{Clean,Filthy}>-Feedback quality
+slider30:fdbDrive=6<0,24,0.01>-Filthy drive [dB]
+slider31:dryWetMix=100<0,100,0.01>-Dry mix [%]
+slider32:wetDryMix=100<0,100,0.01>-Wet mix [%]
+
+slider33:0.1<0,10,0.001>-Warp Rate (Hz)    ---floaty---
+slider34:0.5<0,4,0.1>-Warp Amount (%)
+slider35:80<0,100,1>-Filter Cutoff (%)
+slider36:80<0,150,1>-Filter Resonance (%)
+slider37:1<-2,2,0.5>-Playback Rate
+slider38:98<70,100,1>-L/R Offset (%)
+slider39:6<-12,12,0.1>-Pre-Filter Clamp (dB)
+
+slider40:80<0,100,0.1>-feedback    ---echo---
+slider41:1<0,100,0.1>-lfo depth
+slider42:0.65<0,1,0.01>-lfo speed
+slider43:45<0,100,0.1>-wet mix
+slider44:9<0,10,1{64,128,256,512,1024,2048,4096,8192,16384,32768,65536}>-stages
+slider45:0.1<10,100,.1>-delay
+slider46:30<0,100,1>-hp filter
+slider47:0.5<0,1,0.01>-hp res
+slider48:80<0,100,1>-lp filter
+slider49:0.5<0,1,0.01>-lp res
+slider50:100<0,100,.1>-clock offset
+slider51:1<0,1,0.001>-clock scale
+slider52:1<0.8,1.2,0.01>-clock curve
+slider53:0<0,1,0.01>-hiss
+slider54:0<0,1,1>-sync
+
+slider55:300<0.1,10000,20>-Delay (ms)    ---jph---
+slider61:8<1,17,1>-Delay Sync
+
+//switchers
+slider62:0<-12,12,.1>-Output
+slider63:0<0,6,1>-Theme
+slider64:8<1,17,1>-Delay Sync
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+///////////////////////
+bufferlength = ceil(srate*1);
+buffer0 = 1600000;
+buffer1 = buffer0 + bufferlength;
+bufferpeak = buffer1 + bufferlength;
+freemem = bufferpeak + bufferlength;
+freemem = ui_setup(freemem); // returns the first index it's not using
+///////////////////////
+
+didwegothere = wheredowego;
+
+function slider_update()
+(
+needs_slider_update=0;
+
+outgaina = 10^(slider62/20);
+
+wheredowego == 1 ? (delayslider());
+wheredowego == 2 ? (bounceslider());
+wheredowego == 3 ? (lofislider());
+wheredowego == 4 ? (varlenslider());
+wheredowego == 5 ? (negativeslider());
+wheredowego == 6 ? (toneslider());
+wheredowego == 7 ? (sustainslider());
+wheredowego == 8 ? (chorusslider());
+wheredowego == 9 ? (filthyslider());
+wheredowego == 10 ? (floatyslider());
+wheredowego == 11 ? (reverseslider());
+wheredowego == 12 ? (pongslider());
+wheredowego == 13 ? (echoslider());
+wheredowego == 14 ? (jphslider());
+
+    old_slider64 != slider64 ? (
+        slider64 == 17 ? (slider1 = sixtyfourthtr());
+        slider64 == 16 ? (slider1 = sixtyfourth());
+        slider64 == 15 ? (slider1 = thirtytwothtr());
+        slider64 == 14 ? (slider1 = thirtytwoth());
+        slider64 == 13 ? (slider1 = sixteenthtr());
+        slider64 == 12 ? (slider1 = sixteenth());
+        slider64 == 11 ? (slider1 = eighthtr());
+        slider64 == 10 ? (slider1 = eighth());
+        slider64 == 9 ? (slider1 = fourthtr());
+        slider64 == 8 ? (slider1 = fourth());
+        slider64 == 7 ? (slider1 = halftr());
+        slider64 == 6 ? (slider1 = half());
+        slider64 == 5 ? (slider1 = wholetr());
+        slider64 == 4 ? (slider1 = whole());
+        slider64 == 3 ? (slider1 = twotr());
+        slider64 == 2 ? (slider1 = two());
+        slider64 == 1 ? (slider1 = four());
+        
+        old_slider64 = slider64;
+    );
+
+    slider63 < 1 ? (
+        file=0;
+    ) : slider63 < 2 ? (
+        file=1;
+    ) : slider63 < 3 ? (
+        file=2;
+    ) : slider63 < 5 ? (
+        file=3;
+    ) : slider63 < 6 ? (
+        file=4;
+    ) : slider63 < 7 ? (
+        file=5;
+    );
+
+);
+
+@slider
+needs_slider_update=1;
+
+@block
+didwegothere == 1 || didwegothere == 2 || didwegothere == 4 || didwegothere == 8  ? (
+delaypos=0;
+didwegothere = 0;
+);
+
+didwegothere == 5 ? (
+bpos=0;
+didwegothere = 0;
+);
+
+didwegothere == 6 ? (
+toneinit();
+didwegothere = 0;
+);
+
+didwegothere == 7 ? (
+delaypos=0;
+env=0;
+didwegothere = 0;
+);
+
+didwegothere == 9 ? (
+filthyinit();
+didwegothere = 0;
+);
+
+didwegothere == 10 ? (
+floatyinit();
+didwegothere = 0;
+);
+
+didwegothere == 11 ? (
+pos=0;
+didwegothere = 0;
+);
+
+didwegothere == 12 ? (
+delaypos=0;
+pongloc=0;
+didwegothere = 0;
+);
+
+didwegothere == 13 ? (
+echoinit();
+didwegothere = 0;
+);
+
+didwegothere == 14 ? (
+delayposA = 0;
+delayposB = 0;
+didwegothere = 0;
+);
+
+needs_slider_update ? slider_update();
+
+@sample
+wheredowego == 1 ? (delaysample());
+wheredowego == 2 ? (bouncesample());
+wheredowego == 3 ? (lofisample());
+wheredowego == 4 ? (varlensample());
+wheredowego == 5 ? (negativesample());
+wheredowego == 6 ? (tonesample());
+wheredowego == 7 ? (sustainsample());
+wheredowego == 8 ? (chorussample());
+wheredowego == 9 ? (filthysample());
+wheredowego == 10 ? (floatysample());
+wheredowego == 11 ? (reversesample());
+wheredowego == 12 ? (pongsample());
+wheredowego == 13 ? (echosample());
+wheredowego == 14 ? (jphsample());
+
+spl0*=outgaina;
+spl1*=outgaina;
+
+@gfx 800 300
+control_start("main", "bitmap-simple", file);
+
+ui_screen() == "main" ? (
+title_desc("Delays", "fx | delay | echo");
+
+        ui_split_leftratio(.15);
+            control_group("");
+              ui_split_leftratio(1/2);
+                  ui_split_topratio(1/7);
+                      control_button("delay") ? (
+                      wheredowego = didwegothere = 1);
+                  ui_split_next();
+                      control_button("bounce") ? (
+                      wheredowego = didwegothere = 2);
+                  ui_split_next();
+                      control_button("lofi") ? (
+                      wheredowego = didwegothere = 3);
+                  ui_split_next();
+                      control_button("varlen") ? (
+                      wheredowego = didwegothere = 4);
+                  ui_split_next();
+                      control_button("negative") ? (
+                      wheredowego = didwegothere = 5);
+                  ui_split_next();
+                      control_button("tone") ? (
+                      wheredowego = didwegothere = 6);
+                  ui_split_next();
+                      control_button("sustain") ? (
+                      wheredowego = didwegothere = 7);
+                  ui_pop();
+                  
+            ui_split_next();
+                ui_split_topratio(1/7);
+                    control_button("chorus") ? (
+                    wheredowego = didwegothere = 8);
+                ui_split_next();
+                    control_button("filthy") ? (
+                    wheredowego = didwegothere = 9);
+                ui_split_next();
+                    control_button("floaty") ? (
+                    wheredowego = didwegothere = 10);
+                ui_split_next();
+                    control_button("reverse") ? (
+                    wheredowego = didwegothere = 11);
+                ui_split_next();
+                    control_button("pong") ? (
+                    wheredowego = didwegothere = 12);
+                ui_split_next();
+                    control_button("echo") ? (
+                    wheredowego = didwegothere = 13);
+                ui_split_next();
+                    control_button("jph") ? (
+                    wheredowego = didwegothere = 14);
+                ui_pop();
+            ui_pop();
+        ui_pop();
+        
+        control_group("");
+        ui_split_leftratio(0.85);
+        control_group("");
+        
+        wheredowego == 1 ? (delaygfx());
+        wheredowego == 2 ? (bouncegfx());
+        wheredowego == 3 ? (lofigfx());
+        wheredowego == 4 ? (varlengfx());
+        wheredowego == 5 ? (negativegfx());
+        wheredowego == 6 ? (tonegfx());
+        wheredowego == 7 ? (sustaingfx());
+        wheredowego == 8 ? (chorusgfx());
+        wheredowego == 9 ? (filthygfx());
+        wheredowego == 10 ? (floatygfx());
+        wheredowego == 11 ? (reversegfx());
+        wheredowego == 12 ? (ponggfx());
+        wheredowego == 13 ? (echogfx());
+        wheredowego == 14 ? (jphgfx());
+        
+        ui_pop();
+
+//out
+control_group("");
+    ui_automate(slider62, labelled_dial(slider62, 0, -24, 24, 0, "out", slider62, "%i dB", 50,50,14));
+ui_pop();
+            
+) : ui_screen() == "opts" ? (
+  control_navbar("about", -1, -1);
+
+  ui_pad();
+
+  ui_font(#face, 14, 0, 0);
+  ui_align(0, -1);
+  
+  text_height = ui_wraptext("This is a collection of different JSFX delays):
+    -delay = delay by cockos                          -bounce = delay_chfun by cockos
+    -lofi = delay_lowres by cockos                 -varlen = delay_varlen by cockos
+    -negative = time_adjustment by cockos   -tone = delay_tone by cockos
+    -sustain = delay_sustain by cockos          -chorus = delay_chorus by cockos
+    -filthy = filthy_delay by chokehold             -floaty = floaty_delay by remaincalm
+    -reverse = reverseness by cockos            -pong = delay_pong by stillwell
+    -echo = bbd_echo by witti                         -jph = simple modified LR delay by me
+
+editor: JPH
+-GUI (using Geraint Luff's API)
+  
+-Red dials indicate that they work a bit differently from others:
+      -left mouse button = increase value
+      -right mouse button = decrease value
+      -middle mouse button = set to default");
+ui_align(.5, -1);
+ui_split_rightratio(0.2);
+    control_group("");
+    slider63 = labelled_dial(slider63, 0, 0, 6, 0, "theme", slider63, "%i", 50,50,14);
+ui_pop();
+
+) : ui_system();
+
+ui_interacted() ? needs_slider_update = 1;
+
+@serialize
+file_var(0, wheredowego);

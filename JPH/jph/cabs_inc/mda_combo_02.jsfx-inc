@@ -294,7 +294,7 @@ otm2=0.999*otm2 + spl1 - itm2; itm2=spl1; spl1=otm2;
 function wittigfx() (
         ui_split_leftratio(1/3);
             ui_split_topratio(1/2);
-                sprintf(#selector_text, "%s", 
+                    ui_automate(slider9, fixed_dial(slider9, 0, 0, 7, 0, "IR", slider9, 
                         slider9 == 0 ? ("DIY") : 
                         slider9 == 1 ? ("DI") : 
                         slider9 == 2 ? ("speaker") :
@@ -303,14 +303,7 @@ function wittigfx() (
                         slider9 == 5 ? ("mesa2") :
                         slider9 == 6 ? ("marshall 4x12") :
                         slider9 == 7 ? ("metal 4x12")
-                       );
-                // increment, maximum 10
-                next_value = min(7, slider9 + 1);
-                // decrement, minimum 0
-                prev_value = max(0, slider9 - 1);
-
-                ui_automate(slider9, control_selector2(slider9, #selector_text,
-                        next_value, prev_value));
+                                        , 150,50,12));
             ui_split_next();
                 ui_automate(slider13, labelled_switch_mid(slider13, "mono", "stereo"));
             ui_pop();

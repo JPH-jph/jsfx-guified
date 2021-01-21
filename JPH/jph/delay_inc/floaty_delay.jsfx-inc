@@ -1,0 +1,195 @@
+// License: GPL - http://www.gnu.org/licenses/gpl.html
+// floaty (modulated delay)
+// by daniel arena (dan@remaincalm.org)
+// http://remaincalm.org
+// 2008/09/16 - first version! contact me with bugs etc
+// 2008/09/20 - updated: less glitching on overlap, tempo sync (backward compatible)
+// 2008/10/04 - updated: L/R offset
+// 2009/10/08 - updated: fixed bug where L/R offset active with playrate != 1, tweaked clamping behaviour (default = old behaviour)
+// 2009/10/09 - updated: fixed default clamp value
+// desc: Delay (Floaty)
+// desc: Floaty (Modulated Delay) [remaincalm.org]
+//tags: delay modulation mangler
+//author: remaincalm.org
+
+@init
+
+function floatyinit() (
+pi = 3.141592653589793;
+old_delaysiz = -1; 
+reset = 1;
+clamp = 2; // ugly limiter (pre-filter)
+target_clamp = clamp;
+smooth_overlap = 128; // smooth out if rec/play csr overlap
+);
+
+function floatyslider() (
+delaysiz = (slider1 * srate / 1000)|0;
+bufsiz = delaysiz*4; //max(delaysiz, srate);
+(delaysiz != old_delaysiz || slider37 != old_slider8 || slider33 != old_slider4 || slider38 != old_slider10 ) ?
+(
+  play_csr = 0;
+  rec_csrL = delaysiz-2 ;
+  rec_csrR = (slider38 * rec_csrL / 100) | 0;
+  t = 0;
+  reset = 1;
+  old_delaysiz = delaysiz; 
+  old_slider8 = slider37;
+  old_slider4 = slider33;
+  old_slider10 = slider38;
+);
+
+rate = 2*pi*slider33/srate;
+
+// RC filter params (hi/lo)
+LPF_c = 0.5^(5-(slider35/25));
+LPF_r = 0.5^((slider36/40)-0.6);
+HPF_c = 0.5^4.8;
+HPF_r = 0.5^(3-(slider36/40));
+
+// update clamp value
+target_clamp = 2 ^ (slider39/6);
+);
+
+function floatysample() (
+// move play head
+lplay_csr = play_csr;
+play_csr += (reset>0) ? slider37 : (slider37 + (slider34/100) * sin(t)); 
+t+= (reset>0) ? 0 : rate;
+reset = (play_csr >= bufsiz) ? 0 : reset; // allow one full record cycle before modulation
+play_csr += (play_csr >= bufsiz) ? -bufsiz: 0;
+play_csr += (play_csr < 0) ? bufsiz: 0;
+
+play_csr_0 = 0|play_csr;
+play_csr_1 = (play_csr_0+1 == bufsiz) ? 0 : play_csr_0+1;
+
+// get from play head
+frac0= play_csr - play_csr_0;
+tmpL =  (buf[play_csr_0] * (1-frac0) + buf[play_csr_1] * (frac0));
+tmpR =  (buf[play_csr_0+bufsiz] * (1-frac0) + buf[play_csr_1+bufsiz] * (frac0));
+
+// clean up if play/rec overlapping
+overlap_distL = abs((play_csr % bufsiz) - (rec_csrL % bufsiz));
+overlap_multL = (overlap_distL >= smooth_overlap) ? 1 : overlap_distL/smooth_overlap;
+
+overlap_distR = abs((play_csr % bufsiz) - (rec_csrR % bufsiz));
+overlap_multR = (overlap_distR >= smooth_overlap) ? 1 : overlap_distR/smooth_overlap;
+
+tmpL *= overlap_multL;
+tmpR *= overlap_multR;
+
+// clamp (before filter!)
+// updated
+(clamp != target_clamp) ? (clamp = 0.8 * clamp + 0.2 * target_clamp) ;
+(abs(tmpL) > clamp) ? ( tmpL = (tmpL > 0) ? clamp : -clamp );
+(abs(tmpR) > clamp) ? ( tmpR = (tmpR > 0) ? clamp : -clamp );
+
+
+// run filter
+(slider35 > 0 && slider36 > 0) ?
+(
+  // new lpf
+  v0L = (1 - LPF_r*LPF_c)*v0L - LPF_c*v1L + LPF_c*tmpL;
+  v1L = (1 - LPF_r*LPF_c)*v1L + LPF_c*v0L;
+  tmpL = v1L;
+
+  // new hpf 
+  hv0L = (1 - HPF_r*HPF_c)*hv0L - HPF_c*hv1L + HPF_c*tmpL;
+  hv1L = (1 - HPF_r*HPF_c)*hv1L + HPF_c*hv0L;
+  tmpL -= hv1L;
+
+  // new lpf
+  v0R = (1 - LPF_r*LPF_c)*v0R - LPF_c*v1R + LPF_c*tmpR;
+  v1R = (1 - LPF_r*LPF_c)*v1R + LPF_c*v0R;
+  tmpR = v1R;
+
+  // new hpf 
+  hv0R = (1 - HPF_r*HPF_c)*hv0R - HPF_c*hv1R + HPF_c*tmpR;
+  hv1R = (1 - HPF_r*HPF_c)*hv1R + HPF_c*hv0R;
+  tmpR -= hv1R;
+);
+
+// store and feedback
+buf[rec_csrL]= tmpL * pctFeedback/100 + spl0;
+buf[rec_csrR+bufsiz]= tmpR * pctFeedback/100 + spl1;
+
+// move rec head
+rec_csrL += 1;
+rec_csrL += (rec_csrL >= bufsiz) ? -bufsiz : 0;
+rec_csrL += (rec_csrL < 0) ? bufsiz : 0;
+
+rec_csrR += 1;
+rec_csrR += (rec_csrR >= bufsiz) ? -bufsiz : 0;
+rec_csrR += (rec_csrR < 0) ? bufsiz : 0;
+
+// output
+spl0 = tmpL*(wetDryMix/100) + spl0*(1-(wetDryMix/100));
+spl1 = tmpR*(wetDryMix/100) + spl1*(1-(wetDryMix/100));
+);
+
+function floatygfx() (
+        ui_split_leftratio(1/7);
+                ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_split_next();
+                ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_split_next();
+                ui_automate(pctFeedback, labelled_dial(pctFeedback, 50, 0, 100, 0, "feedback", pctFeedback, "%.1f %%", 50,50,12));
+        ui_pop();
+        ui_split_leftratio(1/4);
+        control_group_nopad("");
+            ui_split_leftratio(1/1);
+                ui_split_topratio(1/2);
+                    ui_automate(slider35, labelled_dial(slider35, 80, 0, 100, 0, "cutoff", slider35, "%.1f %%", 50,50,12));
+                ui_split_next();
+                    ui_automate(slider36, labelled_dial(slider36, 80, 0, 150, 0, "reso", slider36, "%.1f %%", 50,50,12));
+                ui_pop();
+            ui_pop();
+        
+        ui_split_next();
+        control_group_nopad("");
+            ui_split_leftratio(1/1);
+                ui_split_topratio(1/2);
+                    ui_automate(slider33, labelled_dial(slider33, 0.1, 0, 10, 0, "warp rate", slider33, "%.2f Hz", 50,50,12));
+                ui_split_next();
+                    ui_automate(slider34, labelled_dial(slider34, 0.5, 0, 4, 0, "amount", slider34*100/4, "%.1f %%", 50,50,12));
+                ui_pop();
+            ui_pop();
+
+        ui_split_next();
+        control_group_nopad("");
+            ui_split_leftratio(1/1);
+                ui_split_topratio(1/2);
+                    ui_automate(slider37, fixed_dial2(slider37, 1, -2, 2, 0, "playback", slider37, "%.1f", 50,50,12,0.5));
+                ui_split_next();
+                    ui_automate(slider38, labelled_dial(slider38, 98, 70, 100, 0, "lr offs", slider38, "%.1f %%", 50,50,12));
+                ui_pop();
+            ui_pop();
+
+        ui_split_next();
+        control_group_nopad("");
+            ui_split_leftratio(1/1);
+                ui_split_topratio(1/2);
+                    ui_automate(slider39, labelled_dial(slider39, 6, -12, 12, 0, "pre clamp", slider39, "%.1f dB", 50,50,12));
+                ui_split_next();
+                    ui_automate(wetDryMix, labelled_dial(wetDryMix, 100, 0, 100, 0, "mix", wetDryMix, "%.1f %%", 50,50,12));
+                ui_pop();
+            ui_pop();
+        ui_pop();
+);

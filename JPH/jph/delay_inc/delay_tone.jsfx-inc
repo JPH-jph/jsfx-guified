@@ -1,0 +1,121 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+// desc: Delay w/Tone Control
+//tags: delay
+//author: Cockos
+
+@init
+
+function toneinit() (
+delaypos=0;
+Bc0=Bc1=Bc2=0;
+Bli1=Bli2=Bri1=Bri2=0;
+Tc0=Tc1=Tc2=0;
+Tli1=Tli2=Tri1=Tri2=0;
+ldelay1=ldelay2=rdelay1=rdelay2=0;
+);
+
+function toneslider() (
+odelay=delaylen;
+delaylen=min(slider1 * srate / 1000,500000);
+freembuf(delaylen*2);
+delaypos >= delaylen || delaypos < 0 ? delaypos=0;
+
+wetmix = 2^ (slider2/6);
+wetmix2 = slider17;
+drymix2 = 1-slider17;
+
+width=1.5;
+// bass control
+arc=slider14*$pi/(srate*0.5);
+gain=(2 ^ (slider13/6));
+a=(sin(arc)*width) * (gain < 1 ? 1 : 0.25);
+tmp=1/(1+a);  
+Bc0=tmp*a*(gain-1);
+Bc1=tmp*2*cos(arc);
+Bc2=tmp*(a-1);
+
+// treble control
+arc=slider16*$pi/(srate*0.5);
+gain=(2 ^ (slider15/6));
+a=(sin(arc)*width) * (gain < 1 ? 1 : 0.25);
+tmp=1/(1+a);  
+Tc0=tmp*a*(gain-1);
+Tc1=tmp*2*cos(arc);
+Tc2=tmp*(a-1);
+);
+
+function tonesample() (
+dpint = delaypos*2;
+os1=dpint[0];
+os2=dpint[1];
+
+// apply EQ to os1/os2
+
+Btmp=Bc0*(os1-ldelay2) + Bc1*Bli1 + Bc2*Bli2;
+Ttmp=Tc0*(os1-ldelay2) + Tc1*Tli1 + Tc2*Tli2;
+ldelay2=ldelay1; ldelay1=os1; 
+Tli2=Tli1; os1 += (Tli1=Ttmp);
+Bli2=Bli1; os1 += (Bli1=Btmp);
+
+Btmp=Bc0*(os2-rdelay2) + Bc1*Bri1 + Bc2*Bri2;
+Ttmp=Tc0*(os2-rdelay2) + Tc1*Tri1 + Tc2*Tri2;
+rdelay2=rdelay1; rdelay1=os2; 
+Tri2=Tri1; os2 += (Tri1=Ttmp);
+Bri2=Bri1; os2 += (Bri1=Btmp);
+
+
+dpint[0]=min(max(spl0 + os1*wetmix,-4),4);
+dpint[1]=min(max(spl1 + os2*wetmix,-4),4);
+
+(delaypos+=1) >= delaylen ? delaypos=0;
+
+spl0=spl0*drymix2 + os1*wetmix2;
+spl1=spl1*drymix2 + os2*wetmix2;
+);
+
+function tonegfx() (
+        ui_split_leftratio(1/6);
+            ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_split_next();
+
+            ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_split_next();
+            ui_automate(slider2, labelled_dial(slider2, -5, -24, 0, 0, "feedback", slider2, "%.1f dB", 50,50,12));
+        ui_pop();
+        
+        ui_split_leftratio(1/3);
+        control_group_nopad("");
+            ui_split_topratio(1/2);
+                ui_automate(slider13, labelled_dial(slider13, 0, -24, 6, 0, "bass gain", slider13, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(slider14, labelled_dial(slider14, 200, 20, 24000, 0, "bass freq", slider14, "%.i Hz", 50,50,12));
+            ui_pop();
+        ui_split_next();
+        control_group_nopad("");
+            ui_split_topratio(1/2);
+                ui_automate(slider15, labelled_dial(slider15, 0, -24, 6, 0, "treble gain", slider15, "%.1f dB", 50,50,12));
+            ui_split_next();
+                ui_automate(slider16, labelled_dial(slider16, 4000, 20, 24000, 0, "treble freq", slider16, "%.i Hz", 50,50,12));
+            ui_pop();
+        ui_pop();
+            ui_automate(slider17, labelled_dial(slider17, 0.5, 0, 1, 0, "mix", slider17, "%.1f %%", 50,50,12));
+        ui_pop();
+);

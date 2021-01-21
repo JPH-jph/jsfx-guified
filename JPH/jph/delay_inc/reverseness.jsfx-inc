@@ -1,0 +1,71 @@
+// This effect Copyright (C) 2004 and later Cockos Incorporated
+// License: LGPL - http://www.gnu.org/licenses/lgpl.html
+// fade fix/improvements thanks to dan mcmullen
+// desc: Delay w/Reverseness
+//tags: processing sampler mangler delay
+//author: Cockos
+
+@init
+
+function reverseslider() (
+  len=srate*slider1/1000; 
+  wet=2 ^ (slider4/6); 
+  dry=2 ^ (slider5/6); 
+  nonclickymode = 0 != 1;
+  fadelen=len*min(edgeoverlap,nonclickymode?0.5:1.0)*0.5;
+  freembuf(len*2);
+);
+
+function reversesample() (
+s0=((len-pos)*2)[0];
+s1=((len-pos)*2)[1];
+(pos*2)[0]=spl0;
+(pos*2)[1]=spl1;
+
+pp=len-pos;
+w2=pp<fadelen ? pp/fadelen : (pp > len-fadelen?(len-pp)/fadelen:1);
+
+nonclickymode && w2 == 1 ?(
+  pp= abs(len*0.5-pos);
+  w2= pp<fadelen ? pp/fadelen : 1;
+);
+
+spl0=s0*wet*w2 + spl0*(dry + 1-w2);
+spl1=s1*wet*w2 + spl1*(dry + 1-w2);
+
+(pos+=1)>=len ? pos=0;
+);
+
+function reversegfx() (
+        ui_split_leftratio(1/5);
+                ui_automate(slider1, labelled_dial(slider1, 300, 0, 4000, 0, "ms", slider1, slider1 == 0 ? ("0 ms") : ("%.i ms"), 50,50,12));
+        ui_split_next();
+                ui_automate(slider64, fixed_delaydial(slider64, 8, 17, 1, -2, "sync", slider64,
+                                            slider64 == 17 ? ("1/64 tr") :
+                                            slider64 == 16 ? ("1/64") :
+                                            slider64 == 15 ? ("1/32 tr") :
+                                            slider64 == 14 ? ("1/32") :
+                                            slider64 == 13 ? ("1/16 tr") :
+                                            slider64 == 12 ? ("1/16") :
+                                            slider64 == 11 ? ("1/8 tr") :
+                                            slider64 == 10 ? ("1/8") :
+                                            slider64 == 9 ? ("1/4 tr") :
+                                            slider64 == 8 ? ("1/4") :
+                                            slider64 == 7 ? ("1/2 tr") : 
+                                            slider64 == 6 ? ("1/2") :
+                                            slider64 == 5 ? ("1/1 tr") :
+                                            slider64 == 4 ? ("1/1") :
+                                            slider64 == 3 ? ("2/1 tr") :
+                                            slider64 == 2 ? ("2/1") :
+                                            slider64 == 1 ? ("4/1"), 50,50,12));
+        ui_split_next();
+            ui_automate(pctFeedback, labelled_dial(pctFeedback, 10, 0, 100, 0, "overlap", pctFeedback, "%.1f %%", 50,50,12));
+            edgeoverlap = pctFeedback/100;
+        ui_pop();
+        control_group_nopad("");
+        ui_split_leftratio(1/2);
+            ui_automate(slider4, labelled_dial(slider4, -6, -48, 6, 0, "wet", slider4, "%.1f dB", 50,50,12));
+        ui_split_next();
+            ui_automate(slider5, labelled_dial(slider5, 0, -48, 6, 0, "dry", slider5, "%.1f dB", 50,50,12));
+        ui_pop();
+);
